@@ -38,6 +38,7 @@ Migrations live in `supabase/migrations/` and must be applied **in order** — l
 | `0004_storage.sql` | Storage buckets (`avatars`, `employee-documents`, `payslips`, `company-assets`) and their access policies |
 | `0005_multi_company.sql` | Adds `companies` (replacing the single-row `company_settings`) and `company_memberships`; scopes every table with a `company_id`; re-scopes the payroll engine and views per company |
 | `0006_multi_company_rls.sql` | Rewrites every RLS policy (and the four storage policies) to be company-scoped instead of single-tenant |
+| `0007_default_company.sql` | Adds `profiles.default_company_id` and a `set_default_company` RPC so a company's HR/Admin can pin which company a user lands in after login |
 
 Then seed a starter company with sample departments, positions, and announcements:
 
@@ -71,6 +72,7 @@ LIBSA Consultancy provides HR/payroll as a service to multiple client companies,
 - A client's own employees don't need a membership row at all — their `employees.profile_id` + `employees.company_id` is enough for self-service access (attendance, leave, payslips) to their one employer.
 - Every domain table (`employees`, `departments`, `payroll_periods`, `loans`, `audit_logs`, …) carries a `company_id`, and every RLS policy checks it — see `supabase/migrations/0006_multi_company_rls.sql`.
 - The UI's **company switcher** (top of the sidebar) sets a `current_company_id` cookie (`src/lib/company.ts`, `src/actions/company.ts`); every server action and page query filters by it.
+- A user who belongs to more than one company sees a **"Choose a company"** picker right after login (`/select-company`) — unless a company's HR/Admin has pinned a **default company** for them (the ⭐ button on that company's Team list), in which case they skip the picker and land straight there. The switcher/picker are still available afterward to change companies.
 
 ## Roles
 

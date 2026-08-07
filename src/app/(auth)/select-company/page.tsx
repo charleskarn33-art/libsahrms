@@ -28,6 +28,14 @@ export default async function SelectCompanyPage() {
     redirect("/dashboard");
   }
 
+  const { data: profile } = await supabase.from("profiles").select("default_company_id").eq("id", user.id).maybeSingle();
+  const hasReachableDefault =
+    profile?.default_company_id && context.all.some((c) => c.company_id === profile.default_company_id);
+
+  if (hasReachableDefault) {
+    redirect("/dashboard");
+  }
+
   return <SelectCompanyPicker companies={context.all} />;
 }
 
