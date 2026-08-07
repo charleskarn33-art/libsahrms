@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompanyId } from "@/lib/company";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -24,8 +25,13 @@ export default async function PayrollPeriodsPage() {
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user?.id ?? "").single();
   const role = (profile?.role ?? "employee") as UserRole;
 
-  const { data: periods } = await supabase.from("payroll_periods").select("*").order("period_start", { ascending: false });
-  const { data: summaries } = await supabase.from("v_payroll_period_summary").select("*");
+  const companyId = await getCurrentCompanyId();
+  const { data: periods } = await supabase
+    .from("payroll_periods")
+    .select("*")
+    .eq("company_id", companyId ?? "")
+    .order("period_start", { ascending: false });
+  const { data: summaries } = await supabase.from("v_payroll_period_summary").select("*").eq("company_id", companyId ?? "");
 
   const summaryMap = new Map((summaries ?? []).map((s) => [s.payroll_period_id, s]));
 

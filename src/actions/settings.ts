@@ -12,8 +12,10 @@ export async function updateCompanySettings(id: string, input: unknown): Promise
   if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
   const supabase = await createClient();
+  const { company_name, ...rest } = parsed.data;
   const payload = {
-    ...parsed.data,
+    ...rest,
+    name: company_name,
     address: parsed.data.address || null,
     phone: parsed.data.phone || null,
     email: parsed.data.email || null,
@@ -21,10 +23,10 @@ export async function updateCompanySettings(id: string, input: unknown): Promise
     nasscorp_employer_number: parsed.data.nasscorp_employer_number || null,
   };
 
-  const { error } = await supabase.from("company_settings").update(payload).eq("id", id);
+  const { error } = await supabase.from("companies").update(payload).eq("id", id);
   if (error) return { success: false, error: error.message };
 
-  await logAudit({ action: "company_settings_updated", entityType: "company_settings", entityId: id });
+  await logAudit({ action: "company_settings_updated", entityType: "company", entityId: id, companyId: id });
   revalidatePath("/settings");
   return { success: true };
 }

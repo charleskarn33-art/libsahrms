@@ -1,14 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompanyId } from "@/lib/company";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmployeeForm } from "@/components/employees/employee-form";
 
 export default async function NewEmployeePage() {
   const supabase = await createClient();
+  const companyId = await getCurrentCompanyId();
 
   const [{ data: departments }, { data: positions }, { data: employees }] = await Promise.all([
-    supabase.from("departments").select("id, name").order("name"),
-    supabase.from("positions").select("id, title").order("title"),
-    supabase.from("employees").select("id, first_name, last_name").order("first_name"),
+    supabase.from("departments").select("id, name").eq("company_id", companyId ?? "").order("name"),
+    supabase.from("positions").select("id, title").eq("company_id", companyId ?? "").order("title"),
+    supabase.from("employees").select("id, first_name, last_name").eq("company_id", companyId ?? "").order("first_name"),
   ]);
 
   return (

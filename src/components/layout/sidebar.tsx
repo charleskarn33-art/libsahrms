@@ -6,7 +6,8 @@ import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, NAV_ITEMS_ADMIN, type NavItem } from "@/components/layout/nav-config";
-import type { UserRole } from "@/types/database";
+import { CompanySwitcher } from "@/components/layout/company-switcher";
+import type { MyCompanyRow, UserRole } from "@/types/database";
 
 function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   const [open, setOpen] = useState(pathname.startsWith(item.href));
@@ -66,7 +67,15 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   );
 }
 
-export function Sidebar({ role }: { role: UserRole }) {
+export function Sidebar({
+  role,
+  currentCompany,
+  companies,
+}: {
+  role: UserRole;
+  currentCompany: MyCompanyRow | null;
+  companies: MyCompanyRow[];
+}) {
   const pathname = usePathname();
   const visible = (items: NavItem[]) => items.filter((item) => !item.roles || item.roles.includes(role));
 
@@ -81,6 +90,12 @@ export function Sidebar({ role }: { role: UserRole }) {
           <p className="text-[10px] font-medium tracking-widest text-muted-foreground">CONSULTANCY</p>
         </div>
       </div>
+
+      {currentCompany && (
+        <div className="border-b border-border p-3">
+          <CompanySwitcher current={currentCompany} companies={companies} />
+        </div>
+      )}
 
       <nav className="flex-1 space-y-1 overflow-y-auto scrollbar-thin px-3 py-4">
         {visible(NAV_ITEMS).map((item) => (

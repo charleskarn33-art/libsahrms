@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CalendarDays, HandCoins, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompanyId } from "@/lib/company";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { UserRole } from "@/types/database";
@@ -18,21 +19,36 @@ export default async function ApprovalsPage() {
   const isDirector = ["super_admin", "managing_director"].includes(role);
   const isPayrollStaff = ["super_admin", "hr_manager", "payroll_officer", "finance_manager", "managing_director"].includes(role);
 
+  const companyId = await getCurrentCompanyId();
+
   const [{ data: leaveRequests }, { data: loans }, { data: financePeriods }, { data: directorPeriods }] = await Promise.all([
     isHr
       ? supabase
           .from("leave_requests")
           .select("id, leave_type, days_requested, employees(first_name, last_name)")
+          .eq("company_id", companyId ?? "")
           .eq("status", "pending")
       : Promise.resolve({ data: [] }),
     isPayrollStaff
-      ? supabase.from("loans").select("id, loan_type, principal_amount, employees(first_name, last_name)").eq("status", "pending")
+      ? supabase
+          .from("loans")
+          .select("id, loan_type, principal_amount, employees(first_name, last_name)")
+          .eq("company_id", companyId ?? "")
+          .eq("status", "pending")
       : Promise.resolve({ data: [] }),
     isFinance
-      ? supabase.from("payroll_periods").select("id, period_label").eq("approval_stage", "finance_review")
+      ? supabase
+          .from("payroll_periods")
+          .select("id, period_label")
+          .eq("company_id", companyId ?? "")
+          .eq("approval_stage", "finance_review")
       : Promise.resolve({ data: [] }),
     isDirector
-      ? supabase.from("payroll_periods").select("id, period_label").eq("approval_stage", "director_approval")
+      ? supabase
+          .from("payroll_periods")
+          .select("id, period_label")
+          .eq("company_id", companyId ?? "")
+          .eq("approval_stage", "director_approval")
       : Promise.resolve({ data: [] }),
   ]);
 

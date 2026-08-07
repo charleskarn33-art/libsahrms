@@ -22,13 +22,14 @@ export async function requestLeave(input: unknown): Promise<ActionResult> {
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
-  const { data: employee } = await supabase.from("employees").select("id").eq("profile_id", user.id).single();
+  const { data: employee } = await supabase.from("employees").select("id, company_id").eq("profile_id", user.id).single();
   if (!employee) return { success: false, error: "No employee record linked to this account" };
 
   const { data, error } = await supabase
     .from("leave_requests")
     .insert({
       employee_id: employee.id,
+      company_id: employee.company_id,
       leave_type: parsed.data.leave_type,
       start_date: parsed.data.start_date,
       end_date: parsed.data.end_date,
@@ -40,7 +41,7 @@ export async function requestLeave(input: unknown): Promise<ActionResult> {
 
   if (error) return { success: false, error: error.message };
 
-  await logAudit({ action: "leave_requested", entityType: "leave_request", entityId: data.id });
+  await logAudit({ action: "leave_requested", entityType: "leave_request", entityId: data.id, companyId: employee.company_id });
   revalidatePath("/leave");
   return { success: true };
 }
@@ -59,7 +60,7 @@ export async function reviewLeaveRequest(id: string, decision: "approved" | "rej
       reviewed_at: new Date().toISOString(),
     })
     .eq("id", id)
-    .select("employee_id, leave_type, days_requested")
+    .select("employee_id, leave_type, days_requested, company_id")
     .single();
 
   if (error) return { success: false, error: error.message };
@@ -98,7 +99,7 @@ export async function reviewLeaveRequest(id: string, decision: "approved" | "rej
     }
   }
 
-  await logAudit({ action: `leave_${decision}`, entityType: "leave_request", entityId: id });
+  await logAudit({ action: `leave_${decision}`, entityType: "leave_request", entityId: id, companyId: leaveRequest?.company_id });
   revalidatePath("/leave");
   revalidatePath("/approvals");
   return { success: true };

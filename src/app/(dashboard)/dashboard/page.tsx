@@ -1,5 +1,6 @@
 import { Users, ClipboardCheck, CheckCircle2, Wallet, CalendarClock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompanyId } from "@/lib/company";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { PayrollWorkflow } from "@/components/dashboard/payroll-workflow";
 import { SalaryTrendChart } from "@/components/dashboard/salary-trend-chart";
@@ -13,6 +14,7 @@ import type { PayrollPeriodSummary } from "@/types/database";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const companyId = await getCurrentCompanyId();
 
   const [
     { count: totalEmployees },
@@ -21,15 +23,29 @@ export default async function DashboardPage() {
     { data: periodSummaries },
     { data: announcements },
   ] = await Promise.all([
-    supabase.from("employees").select("id", { count: "exact", head: true }),
-    supabase.from("employees").select("id", { count: "exact", head: true }).eq("employment_status", "active"),
-    supabase.from("leave_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("employees").select("id", { count: "exact", head: true }).eq("company_id", companyId ?? ""),
+    supabase
+      .from("employees")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", companyId ?? "")
+      .eq("employment_status", "active"),
+    supabase
+      .from("leave_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", companyId ?? "")
+      .eq("status", "pending"),
     supabase
       .from("v_payroll_period_summary")
       .select("*")
+      .eq("company_id", companyId ?? "")
       .order("payroll_period_id", { ascending: false })
       .limit(6),
-    supabase.from("announcements").select("*").order("published_at", { ascending: false }).limit(3),
+    supabase
+      .from("announcements")
+      .select("*")
+      .eq("company_id", companyId ?? "")
+      .order("published_at", { ascending: false })
+      .limit(3),
   ]);
 
   const summaries = (periodSummaries ?? []) as PayrollPeriodSummary[];

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompanyId } from "@/lib/company";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmployeeTable } from "@/components/employees/employee-table";
@@ -8,9 +9,11 @@ import type { EmployeeDirectoryRow } from "@/types/database";
 
 export default async function EmployeesPage() {
   const supabase = await createClient();
+  const companyId = await getCurrentCompanyId();
   const { data: employees } = await supabase
     .from("v_employee_directory")
     .select("*")
+    .eq("company_id", companyId ?? "")
     .order("first_name", { ascending: true });
 
   return (

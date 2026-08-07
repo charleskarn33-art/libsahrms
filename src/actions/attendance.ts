@@ -13,7 +13,7 @@ export async function clockIn(): Promise<ActionResult> {
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
-  const { data: employee } = await supabase.from("employees").select("id").eq("profile_id", user.id).single();
+  const { data: employee } = await supabase.from("employees").select("id, company_id").eq("profile_id", user.id).single();
   if (!employee) return { success: false, error: "No employee record linked to this account" };
 
   const today = new Date().toISOString().slice(0, 10);
@@ -23,6 +23,7 @@ export async function clockIn(): Promise<ActionResult> {
   const { error } = await supabase.from("attendance_records").upsert(
     {
       employee_id: employee.id,
+      company_id: employee.company_id,
       work_date: today,
       clock_in: now.toISOString(),
       status: isLate ? "late" : "present",
@@ -32,7 +33,7 @@ export async function clockIn(): Promise<ActionResult> {
 
   if (error) return { success: false, error: error.message };
 
-  await logAudit({ action: "clock_in", entityType: "attendance", entityId: employee.id });
+  await logAudit({ action: "clock_in", entityType: "attendance", entityId: employee.id, companyId: employee.company_id });
   revalidatePath("/attendance");
   return { success: true };
 }
@@ -44,7 +45,7 @@ export async function clockOut(): Promise<ActionResult> {
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
-  const { data: employee } = await supabase.from("employees").select("id").eq("profile_id", user.id).single();
+  const { data: employee } = await supabase.from("employees").select("id, company_id").eq("profile_id", user.id).single();
   if (!employee) return { success: false, error: "No employee record linked to this account" };
 
   const today = new Date().toISOString().slice(0, 10);
@@ -57,7 +58,7 @@ export async function clockOut(): Promise<ActionResult> {
 
   if (error) return { success: false, error: error.message };
 
-  await logAudit({ action: "clock_out", entityType: "attendance", entityId: employee.id });
+  await logAudit({ action: "clock_out", entityType: "attendance", entityId: employee.id, companyId: employee.company_id });
   revalidatePath("/attendance");
   return { success: true };
 }

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompanyId } from "@/lib/company";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -27,9 +28,11 @@ export default async function LeavePage() {
 
   const { data: employee } = await supabase.from("employees").select("id").eq("profile_id", user?.id ?? "").maybeSingle();
 
+  const companyId = await getCurrentCompanyId();
   const query = supabase
     .from("leave_requests")
     .select("id, leave_type, start_date, end_date, days_requested, status, reason, employees(first_name, last_name)")
+    .eq("company_id", companyId ?? "")
     .order("created_at", { ascending: false });
 
   const { data: requests } = isHr ? await query : await query.eq("employee_id", employee?.id ?? "");

@@ -1,5 +1,6 @@
 import { Building2, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompanyId } from "@/lib/company";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DepartmentDialog } from "@/components/departments/department-dialog";
@@ -8,12 +9,17 @@ import { formatCurrency } from "@/lib/utils";
 
 export default async function DepartmentsPage() {
   const supabase = await createClient();
+  const companyId = await getCurrentCompanyId();
 
   const [{ data: headcount }, { data: positions }, { data: departments }, { data: employees }] = await Promise.all([
-    supabase.from("v_department_headcount").select("*").order("department_name"),
-    supabase.from("positions").select("id, title, salary_grade, min_salary, max_salary, departments(name)").order("title"),
-    supabase.from("departments").select("id, name, description").order("name"),
-    supabase.from("employees").select("id, first_name, last_name").order("first_name"),
+    supabase.from("v_department_headcount").select("*").eq("company_id", companyId ?? "").order("department_name"),
+    supabase
+      .from("positions")
+      .select("id, title, salary_grade, min_salary, max_salary, departments(name)")
+      .eq("company_id", companyId ?? "")
+      .order("title"),
+    supabase.from("departments").select("id, name, description").eq("company_id", companyId ?? "").order("name"),
+    supabase.from("employees").select("id, first_name, last_name").eq("company_id", companyId ?? "").order("first_name"),
   ]);
 
   const employeeOptions = (employees ?? []).map((e) => ({ id: e.id, label: `${e.first_name} ${e.last_name}` }));

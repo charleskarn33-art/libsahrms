@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompanyId } from "@/lib/company";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -29,9 +30,11 @@ export default async function LoansPage() {
 
   const { data: employee } = await supabase.from("employees").select("id").eq("profile_id", user?.id ?? "").maybeSingle();
 
+  const companyId = await getCurrentCompanyId();
   const query = supabase
     .from("loans")
     .select("id, loan_type, principal_amount, monthly_deduction, balance_remaining, status, requested_at, employees(first_name, last_name)")
+    .eq("company_id", companyId ?? "")
     .order("requested_at", { ascending: false });
 
   const { data: loans } = isPayrollStaff ? await query : await query.eq("employee_id", employee?.id ?? "");

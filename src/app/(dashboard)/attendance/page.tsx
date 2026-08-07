@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompanyId } from "@/lib/company";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -38,9 +39,11 @@ export default async function AttendancePage() {
         .maybeSingle()
     : { data: null };
 
+  const companyId = await getCurrentCompanyId();
   const recordsQuery = supabase
     .from("attendance_records")
     .select("id, work_date, clock_in, clock_out, status, overtime_hours, employees(first_name, last_name)")
+    .eq("company_id", companyId ?? "")
     .order("work_date", { ascending: false })
     .limit(30);
 

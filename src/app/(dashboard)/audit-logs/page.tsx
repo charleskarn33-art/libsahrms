@@ -1,13 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompanyId } from "@/lib/company";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default async function AuditLogsPage() {
   const supabase = await createClient();
+  const companyId = await getCurrentCompanyId();
   const { data: logs } = await supabase
     .from("audit_logs")
     .select("id, action, entity_type, entity_id, actor_email, created_at")
+    .eq("company_id", companyId ?? "")
     .order("created_at", { ascending: false })
     .limit(100);
 

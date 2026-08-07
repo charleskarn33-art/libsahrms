@@ -48,8 +48,49 @@ export interface Profile {
   updated_at: string;
 }
 
+export interface Company {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  tin: string | null;
+  nasscorp_employer_number: string | null;
+  employee_nasscorp_rate: number;
+  employer_nasscorp_rate: number;
+  income_tax_bands: { upTo: number | null; rate: number }[];
+  payroll_frequency: PayrollFrequency;
+  currency: string;
+  orange_money_fee_flat: number;
+  orange_money_fee_percent: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CompanyMembership {
+  id: string;
+  company_id: string;
+  profile_id: string;
+  role: UserRole;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface MyCompanyRow {
+  company_id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  role: UserRole;
+  is_platform_admin: boolean;
+}
+
 export interface Department {
   id: string;
+  company_id: string;
   name: string;
   code: string | null;
   description: string | null;
@@ -60,6 +101,7 @@ export interface Department {
 
 export interface Position {
   id: string;
+  company_id: string;
   title: string;
   department_id: string | null;
   salary_grade: string | null;
@@ -72,6 +114,7 @@ export interface Position {
 
 export interface Employee {
   id: string;
+  company_id: string;
   profile_id: string | null;
   employee_number: string;
 
@@ -146,6 +189,7 @@ export interface EmployeeDirectoryRow {
 
 export interface PayrollPeriod {
   id: string;
+  company_id: string;
   period_label: string;
   frequency: PayrollFrequency;
   period_start: string;
@@ -161,6 +205,7 @@ export interface PayrollPeriod {
 
 export interface PayrollPeriodSummary {
   payroll_period_id: string;
+  company_id: string;
   period_label: string;
   status: PayrollStatus;
   approval_stage: PayrollApprovalStage;

@@ -1,14 +1,18 @@
 import { Landmark } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getCurrentCompanyId } from "@/lib/company";
+import { Card, CardContent } from "@/components/ui/card";
 import { RoadmapPlaceholder } from "@/components/shared/roadmap-placeholder";
 
 export default async function NasscorpPage() {
   const supabase = await createClient();
-  const { data: settings } = await supabase.from("company_settings").select("*").limit(1).maybeSingle();
+  const companyId = await getCurrentCompanyId();
+
+  const { data: company } = await supabase.from("companies").select("*").eq("id", companyId ?? "").maybeSingle();
   const { data: latestSummary } = await supabase
     .from("v_payroll_period_summary")
     .select("*")
+    .eq("company_id", companyId ?? "")
     .order("payroll_period_id", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -24,13 +28,13 @@ export default async function NasscorpPage() {
         <Card>
           <CardContent className="p-5">
             <p className="text-sm text-muted-foreground">Employee NASSCORP Rate</p>
-            <p className="mt-1 text-2xl font-bold">{settings?.employee_nasscorp_rate ?? 4}%</p>
+            <p className="mt-1 text-2xl font-bold">{company?.employee_nasscorp_rate ?? 4}%</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-5">
             <p className="text-sm text-muted-foreground">Employer NASSCORP Rate</p>
-            <p className="mt-1 text-2xl font-bold">{settings?.employer_nasscorp_rate ?? 6}%</p>
+            <p className="mt-1 text-2xl font-bold">{company?.employer_nasscorp_rate ?? 6}%</p>
           </CardContent>
         </Card>
         <Card>
@@ -44,7 +48,7 @@ export default async function NasscorpPage() {
       <RoadmapPlaceholder
         icon={Landmark}
         title="Detailed NASSCORP & Tax Reports"
-        description="Rates are configurable in Settings and already drive the calculate_income_tax and compute_payroll_item database functions used by the payroll engine."
+        description="Rates are configurable per company in Settings and already drive the calculate_income_tax and compute_payroll_item database functions used by the payroll engine."
         phase="Phase 5"
         bullets={[
           "Printable NASSCORP remittance report per period",

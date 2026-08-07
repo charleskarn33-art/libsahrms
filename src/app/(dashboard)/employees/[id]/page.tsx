@@ -19,18 +19,19 @@ export default async function EmployeeDetailPage({
   const { edit } = await searchParams;
   const supabase = await createClient();
 
-  const [{ data: employee }, { data: departments }, { data: positions }, { data: employees }] = await Promise.all([
-    supabase.from("employees").select("*").eq("id", id).single(),
-    supabase.from("departments").select("id, name").order("name"),
-    supabase.from("positions").select("id, title").order("title"),
-    supabase.from("employees").select("id, first_name, last_name").order("first_name"),
-  ]);
+  const { data: employee } = await supabase.from("employees").select("*").eq("id", id).single();
 
   if (!employee) {
     notFound();
   }
 
   const emp = employee as Employee;
+
+  const [{ data: departments }, { data: positions }, { data: employees }] = await Promise.all([
+    supabase.from("departments").select("id, name").eq("company_id", emp.company_id).order("name"),
+    supabase.from("positions").select("id, title").eq("company_id", emp.company_id).order("title"),
+    supabase.from("employees").select("id, first_name, last_name").eq("company_id", emp.company_id).order("first_name"),
+  ]);
   const departmentName = departments?.find((d) => d.id === emp.department_id)?.name;
   const positionTitle = positions?.find((p) => p.id === emp.position_id)?.title;
   const supervisor = employees?.find((e) => e.id === emp.supervisor_id);

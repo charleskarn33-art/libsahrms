@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompanyId } from "@/lib/company";
 import { logAudit } from "@/lib/audit";
 import { payrollPeriodSchema } from "@/lib/validations/payroll";
 
@@ -11,6 +12,9 @@ export async function createPayrollPeriod(input: unknown): Promise<ActionResult<
   const parsed = payrollPeriodSchema.safeParse(input);
   if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
+  const companyId = await getCurrentCompanyId();
+  if (!companyId) return { success: false, error: "No company selected" };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -19,6 +23,7 @@ export async function createPayrollPeriod(input: unknown): Promise<ActionResult<
   const { data, error } = await supabase
     .from("payroll_periods")
     .insert({
+      company_id: companyId,
       period_label: parsed.data.period_label,
       frequency: parsed.data.frequency,
       period_start: parsed.data.period_start,
@@ -31,7 +36,7 @@ export async function createPayrollPeriod(input: unknown): Promise<ActionResult<
 
   if (error) return { success: false, error: error.message };
 
-  await logAudit({ action: "payroll_period_created", entityType: "payroll_period", entityId: data.id });
+  await logAudit({ action: "payroll_period_created", entityType: "payroll_period", entityId: data.id, companyId });
   revalidatePath("/payroll/periods");
   return { success: true, data: { id: data.id } };
 }
@@ -45,7 +50,7 @@ export async function generatePayroll(periodId: string): Promise<ActionResult> {
   const { error: rpcError } = await supabase.rpc("generate_payroll_items", { p_payroll_period_id: periodId });
   if (rpcError) return { success: false, error: rpcError.message };
 
-  const { error } = await supabase
+  const { data: period, error } = await supabase
     .from("payroll_periods")
     .update({
       status: "pending",
@@ -53,11 +58,13 @@ export async function generatePayroll(periodId: string): Promise<ActionResult> {
       hr_prepared_by: user?.id ?? null,
       hr_prepared_at: new Date().toISOString(),
     })
-    .eq("id", periodId);
+    .eq("id", periodId)
+    .select("company_id")
+    .single();
 
   if (error) return { success: false, error: error.message };
 
-  await logAudit({ action: "payroll_generated", entityType: "payroll_period", entityId: periodId });
+  await logAudit({ action: "payroll_generated", entityType: "payroll_period", entityId: periodId, companyId: period?.company_id });
   revalidatePath("/payroll/periods");
   revalidatePath("/dashboard");
   return { success: true };
@@ -69,7 +76,7 @@ export async function financeReview(periodId: string, decision: "approved" | "re
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { error } = await supabase
+  const { data: period, error } = await supabase
     .from("payroll_periods")
     .update({
       finance_decision: decision,
@@ -78,11 +85,13 @@ export async function financeReview(periodId: string, decision: "approved" | "re
       approval_stage: decision === "approved" ? "director_approval" : "hr_preparation",
       status: decision === "approved" ? "pending" : "draft",
     })
-    .eq("id", periodId);
+    .eq("id", periodId)
+    .select("company_id")
+    .single();
 
   if (error) return { success: false, error: error.message };
 
-  await logAudit({ action: `payroll_finance_${decision}`, entityType: "payroll_period", entityId: periodId });
+  await logAudit({ action: `payroll_finance_${decision}`, entityType: "payroll_period", entityId: periodId, companyId: period?.company_id });
   revalidatePath("/payroll/periods");
   revalidatePath("/approvals");
   revalidatePath("/dashboard");
@@ -95,7 +104,7 @@ export async function directorApproval(periodId: string, decision: "approved" | 
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { error } = await supabase
+  const { data: period, error } = await supabase
     .from("payroll_periods")
     .update({
       director_decision: decision,
@@ -104,11 +113,13 @@ export async function directorApproval(periodId: string, decision: "approved" | 
       approval_stage: decision === "approved" ? "payroll_locked" : "finance_review",
       status: decision === "approved" ? "approved" : "pending",
     })
-    .eq("id", periodId);
+    .eq("id", periodId)
+    .select("company_id")
+    .single();
 
   if (error) return { success: false, error: error.message };
 
-  await logAudit({ action: `payroll_director_${decision}`, entityType: "payroll_period", entityId: periodId });
+  await logAudit({ action: `payroll_director_${decision}`, entityType: "payroll_period", entityId: periodId, companyId: period?.company_id });
   revalidatePath("/payroll/periods");
   revalidatePath("/approvals");
   revalidatePath("/dashboard");
@@ -121,14 +132,16 @@ export async function lockPayroll(periodId: string): Promise<ActionResult> {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { error } = await supabase
+  const { data: period, error } = await supabase
     .from("payroll_periods")
     .update({ status: "locked", locked_by: user?.id ?? null, locked_at: new Date().toISOString() })
-    .eq("id", periodId);
+    .eq("id", periodId)
+    .select("company_id")
+    .single();
 
   if (error) return { success: false, error: error.message };
 
-  await logAudit({ action: "payroll_locked", entityType: "payroll_period", entityId: periodId });
+  await logAudit({ action: "payroll_locked", entityType: "payroll_period", entityId: periodId, companyId: period?.company_id });
   revalidatePath("/payroll/periods");
   revalidatePath("/dashboard");
   return { success: true };
@@ -140,7 +153,7 @@ export async function unlockPayroll(periodId: string): Promise<ActionResult> {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { error } = await supabase
+  const { data: period, error } = await supabase
     .from("payroll_periods")
     .update({
       status: "draft",
@@ -148,11 +161,13 @@ export async function unlockPayroll(periodId: string): Promise<ActionResult> {
       unlocked_by: user?.id ?? null,
       unlocked_at: new Date().toISOString(),
     })
-    .eq("id", periodId);
+    .eq("id", periodId)
+    .select("company_id")
+    .single();
 
   if (error) return { success: false, error: error.message };
 
-  await logAudit({ action: "payroll_unlocked", entityType: "payroll_period", entityId: periodId });
+  await logAudit({ action: "payroll_unlocked", entityType: "payroll_period", entityId: periodId, companyId: period?.company_id });
   revalidatePath("/payroll/periods");
   return { success: true };
 }

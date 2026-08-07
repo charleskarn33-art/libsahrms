@@ -15,6 +15,7 @@ import {
   UsersRound,
   Bell,
   Landmark,
+  Building,
 } from "lucide-react";
 import type { UserRole } from "@/types/database";
 
@@ -77,6 +78,7 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 export const NAV_ITEMS_ADMIN: NavItem[] = [
+  { label: "Companies", href: "/companies", icon: Building, roles: ["super_admin"] },
   { label: "Settings", href: "/settings", icon: Settings, roles: ["super_admin", "hr_manager"] },
   { label: "User Management", href: "/settings/users", icon: UsersRound, roles: ["super_admin"] },
   { label: "Audit Logs", href: "/audit-logs", icon: ShieldCheck, roles: ["super_admin", "auditor", "managing_director"] },

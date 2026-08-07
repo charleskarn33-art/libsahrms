@@ -5,6 +5,7 @@ export async function logAudit(params: {
   action: string;
   entityType: string;
   entityId?: string;
+  companyId?: string | null;
   metadata?: Record<string, unknown>;
 }) {
   const supabase = await createClient();
@@ -18,6 +19,7 @@ export async function logAudit(params: {
     action: params.action,
     entity_type: params.entityType,
     entity_id: params.entityId ?? null,
+    company_id: params.companyId ?? null,
     metadata: params.metadata ?? {},
   });
 }

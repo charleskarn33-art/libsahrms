@@ -1,22 +1,31 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentCompany } from "@/lib/company";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CompanySettingsForm } from "@/components/settings/company-settings-form";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
+  const companyContext = await getCurrentCompany();
 
-  let { data: settings } = await supabase.from("company_settings").select("*").limit(1).maybeSingle();
-
-  if (!settings) {
-    const { data: created } = await supabase.from("company_settings").insert({}).select("*").single();
-    settings = created;
+  if (!companyContext) {
+    return (
+      <div className="text-sm text-muted-foreground">Select a company first to manage its settings.</div>
+    );
   }
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("*")
+    .eq("id", companyContext.company.company_id)
+    .single();
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground">Company information, tax rates, and NASSCORP configuration.</p>
+        <p className="text-sm text-muted-foreground">
+          Company information, tax rates, and NASSCORP configuration for {companyContext.company.name}.
+        </p>
       </div>
 
       <Card>
@@ -24,19 +33,19 @@ export default async function SettingsPage() {
           <CardTitle>Company &amp; Payroll Settings</CardTitle>
         </CardHeader>
         <CardContent>
-          {settings && (
+          {company && (
             <CompanySettingsForm
-              id={settings.id}
+              id={company.id}
               defaultValues={{
-                company_name: settings.company_name,
-                address: settings.address ?? "",
-                phone: settings.phone ?? "",
-                email: settings.email ?? "",
-                tin: settings.tin ?? "",
-                nasscorp_employer_number: settings.nasscorp_employer_number ?? "",
-                employee_nasscorp_rate: settings.employee_nasscorp_rate,
-                employer_nasscorp_rate: settings.employer_nasscorp_rate,
-                currency: settings.currency,
+                company_name: company.name,
+                address: company.address ?? "",
+                phone: company.phone ?? "",
+                email: company.email ?? "",
+                tin: company.tin ?? "",
+                nasscorp_employer_number: company.nasscorp_employer_number ?? "",
+                employee_nasscorp_rate: company.employee_nasscorp_rate,
+                employer_nasscorp_rate: company.employer_nasscorp_rate,
+                currency: company.currency,
               }}
             />
           )}
