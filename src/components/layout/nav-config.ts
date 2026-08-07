@@ -54,7 +54,18 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { label: "Attendance", href: "/attendance", icon: Clock },
-  { label: "Leave Management", href: "/leave", icon: CalendarDays },
+  {
+    label: "Leave Management",
+    href: "/leave",
+    icon: CalendarDays,
+    children: [
+      { label: "Leave Dashboard", href: "/leave" },
+      { label: "Leave Calendar", href: "/leave/calendar" },
+      { label: "Leave Balance", href: "/leave/balance" },
+      { label: "Public Holidays", href: "/leave/holidays" },
+      { label: "Leave Settings", href: "/leave/settings" },
+    ],
+  },
   {
     label: "Payroll",
     href: "/payroll",

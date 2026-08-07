@@ -234,6 +234,14 @@ export interface LeaveRequest {
   created_at: string;
 }
 
+export interface PublicHoliday {
+  id: string;
+  company_id: string;
+  name: string;
+  holiday_date: string;
+  created_at: string;
+}
+
 export interface Announcement {
   id: string;
   title: string;

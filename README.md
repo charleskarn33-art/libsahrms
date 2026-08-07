@@ -43,6 +43,7 @@ Migrations live in `supabase/migrations/` and must be applied **in order** — l
 | `0009_probation_status.sql` | Adds `'probation'` to the `employment_status` enum |
 | `0010_employee_directory_extra_fields.sql` | Appends `gender` and `tin` to the `v_employee_directory` view for the Employee Database page's stat cards and name-card TIN line |
 | `0011_payments_processed_stage.sql` | Adds `'payments_processed'` as the sixth (final) stage of `payroll_approval_stage`, after `payslips_sent` |
+| `0012_public_holidays.sql` | Adds the company-scoped `public_holidays` table (backs the Public Holidays page and the leave calendar) |
 
 Then seed a starter company with sample departments, positions, and announcements:
 
@@ -100,7 +101,7 @@ LIBSA Consultancy provides HR/payroll as a service to multiple client companies,
 - Employee Management: full CRUD, tabbed form (with photo upload) covering every field in the spec; Employee Database view with gender/probation/inactive stat cards, department/status/type filters, checkbox multi-select + bulk delete, numbered pagination, and CSV Import/Export
 - Departments & Positions: CRUD, headcount + payroll cost cards
 - Attendance: clock in/out, per-employee and team history
-- Leave: request workflow, HR approval/rejection, balance tracking
+- Leave Dashboard (`/leave`): stat cards (total/approved/pending/rejected this month, today's absences), department/type filters, status tabs with counts, a paginated request table, a Leave Balance Summary sidebar card, and Quick Actions; plus a real Leave Calendar (`/leave/calendar`, month grid with holidays + approved leave), a dedicated Leave Balance page (`/leave/balance`), and Public Holidays CRUD (`/leave/holidays`)
 
 **Phase 3 — Payroll workflow**
 - Payroll Dashboard (`/payroll`): current-period stat cards, the 6-stage approval workflow, a paginated periods table with Created By and a real per-period detail page (`/payroll/periods/[id]`, with a CSV export of the employee-level breakdown), Department Payroll Summary, a Deductions Breakdown donut chart, a Payroll Summary card, Quick Actions, and a Payroll Activities feed sourced from `audit_logs`

@@ -1,19 +1,13 @@
+import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/company";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { LeaveRequestDialog } from "@/components/leave/leave-request-dialog";
-import { LeaveReviewActions } from "@/components/leave/leave-review-actions";
-import { formatDate } from "@/lib/utils";
+import { LeaveStatCards } from "@/components/leave/leave-stat-cards";
+import { LeaveTable, type LeaveRequestRow } from "@/components/leave/leave-table";
+import { LeaveBalanceSummary } from "@/components/leave/leave-balance-summary";
+import { LeaveQuickActions } from "@/components/leave/leave-quick-actions";
+import { LeaveRequestDialogProvider, NewLeaveRequestButton } from "@/components/leave/leave-request-context";
+import { Card, CardContent } from "@/components/ui/card";
 import type { LeaveRequestStatus, UserRole } from "@/types/database";
-
-const STATUS_VARIANT: Record<LeaveRequestStatus, "success" | "warning" | "danger" | "outline"> = {
-  approved: "success",
-  pending: "warning",
-  rejected: "danger",
-  cancelled: "outline",
-};
 
 const HR_ROLES: UserRole[] = ["super_admin", "hr_manager"];
 
@@ -31,90 +25,104 @@ export default async function LeavePage() {
   const companyId = await getCurrentCompanyId();
   const query = supabase
     .from("leave_requests")
-    .select("id, leave_type, start_date, end_date, days_requested, status, reason, employees(first_name, last_name)")
+    .select(
+      "id, leave_type, start_date, end_date, days_requested, status, reason, created_at, employees(employee_number, first_name, last_name, photo_url, departments(name))"
+    )
     .eq("company_id", companyId ?? "")
     .order("created_at", { ascending: false });
 
   const { data: requests } = isHr ? await query : await query.eq("employee_id", employee?.id ?? "");
 
+  const rows: LeaveRequestRow[] = (requests ?? []).map((r) => {
+    const emp = r.employees as unknown as {
+      employee_number: string;
+      first_name: string;
+      last_name: string;
+      photo_url: string | null;
+      departments: { name: string } | null;
+    } | null;
+    return {
+      id: r.id,
+      employee_name: emp ? `${emp.first_name} ${emp.last_name}` : "—",
+      employee_number: emp?.employee_number ?? "—",
+      department_name: emp?.departments?.name ?? null,
+      photo_url: emp?.photo_url ?? null,
+      leave_type: r.leave_type,
+      start_date: r.start_date,
+      end_date: r.end_date,
+      days_requested: Number(r.days_requested),
+      reason: r.reason,
+      status: r.status,
+      applied_at: r.created_at,
+    };
+  });
+
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+  const thisMonthRows = rows.filter((r) => new Date(r.applied_at) >= monthStart);
+  const lastMonthRows = rows.filter((r) => new Date(r.applied_at) >= lastMonthStart && new Date(r.applied_at) < monthStart);
+
+  const countByStatus = (list: LeaveRequestRow[], status: LeaveRequestStatus) => list.filter((r) => r.status === status).length;
+  const monthOverMonthPct =
+    lastMonthRows.length > 0 ? ((thisMonthRows.length - lastMonthRows.length) / lastMonthRows.length) * 100 : null;
+
+  const today = now.toISOString().slice(0, 10);
+  const { count: todaysAbsences } = await supabase
+    .from("leave_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("company_id", companyId ?? "")
+    .eq("status", "approved")
+    .lte("start_date", today)
+    .gte("end_date", today);
+
   const { data: balances } = employee
-    ? await supabase.from("leave_balances").select("*").eq("employee_id", employee.id).eq("year", new Date().getFullYear())
+    ? await supabase.from("leave_balances").select("*").eq("employee_id", employee.id).eq("year", now.getFullYear())
     : { data: [] };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Leave Management</h1>
-          <p className="text-sm text-muted-foreground">
-            {isHr ? "Review and manage employee leave requests." : "Request leave and track your balance."}
-          </p>
+    <LeaveRequestDialogProvider>
+      <div className="space-y-6">
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <span>Leave Management</span>
+          <ChevronRight className="h-3.5 w-3.5" />
+          <span className="font-medium text-foreground">Leave Dashboard</span>
         </div>
-        <LeaveRequestDialog />
-      </div>
 
-      {!isHr && (balances ?? []).length > 0 && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {(balances ?? []).map((b) => (
-            <Card key={b.id}>
-              <CardContent className="p-4">
-                <p className="text-xs capitalize text-muted-foreground">{b.leave_type} leave</p>
-                <p className="mt-1 text-xl font-bold">{Number(b.entitled_days) - Number(b.used_days)} days</p>
-                <p className="text-xs text-muted-foreground">of {b.entitled_days} entitled</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Leave Management</h1>
+            <p className="text-sm text-muted-foreground">Manage and track employee leave requests.</p>
+          </div>
+          <NewLeaveRequestButton />
+        </div>
+
+        <LeaveStatCards
+          total={thisMonthRows.length}
+          approved={countByStatus(thisMonthRows, "approved")}
+          pending={countByStatus(thisMonthRows, "pending")}
+          rejected={countByStatus(thisMonthRows, "rejected")}
+          todaysAbsences={todaysAbsences ?? 0}
+          monthOverMonthPct={monthOverMonthPct}
+        />
+
+        <div className="grid gap-6 xl:grid-cols-3">
+          <div className="xl:col-span-2">
+            <Card>
+              <CardContent className="p-6">
+                <LeaveTable requests={rows} isHr={isHr} />
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{isHr ? "All Leave Requests" : "My Leave Requests"}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0 pb-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {isHr && <TableHead>Employee</TableHead>}
-                <TableHead>Type</TableHead>
-                <TableHead>Dates</TableHead>
-                <TableHead>Days</TableHead>
-                <TableHead>Status</TableHead>
-                {isHr && <TableHead className="text-right">Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(requests ?? []).length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={isHr ? 6 : 4} className="py-10 text-center text-sm text-muted-foreground">
-                    No leave requests yet.
-                  </TableCell>
-                </TableRow>
-              )}
-              {(requests ?? []).map((r) => {
-                const emp = r.employees as unknown as { first_name: string; last_name: string } | null;
-                return (
-                  <TableRow key={r.id}>
-                    {isHr && <TableCell className="font-medium">{emp ? `${emp.first_name} ${emp.last_name}` : "—"}</TableCell>}
-                    <TableCell className="capitalize">{r.leave_type}</TableCell>
-                    <TableCell>
-                      {formatDate(r.start_date)} – {formatDate(r.end_date)}
-                    </TableCell>
-                    <TableCell>{r.days_requested}</TableCell>
-                    <TableCell>
-                      <Badge variant={STATUS_VARIANT[r.status as LeaveRequestStatus]} className="capitalize">
-                        {r.status}
-                      </Badge>
-                    </TableCell>
-                    {isHr && <TableCell className="text-right">{r.status === "pending" && <LeaveReviewActions id={r.id} />}</TableCell>}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+          <div className="space-y-6">
+            <LeaveBalanceSummary balances={(balances ?? []).map((b) => ({ leave_type: b.leave_type, entitled_days: Number(b.entitled_days), used_days: Number(b.used_days) }))} />
+            <LeaveQuickActions />
+          </div>
+        </div>
+      </div>
+    </LeaveRequestDialogProvider>
   );
 }
 
