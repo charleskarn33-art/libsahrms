@@ -5,6 +5,7 @@ export const employeeSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   middle_name: z.string().optional().or(z.literal("")),
   last_name: z.string().min(1, "Last name is required"),
+  photo_url: z.string().optional().or(z.literal("")),
 
   gender: z.enum(["male", "female", "other"]).optional(),
   date_of_birth: z.string().optional().or(z.literal("")),

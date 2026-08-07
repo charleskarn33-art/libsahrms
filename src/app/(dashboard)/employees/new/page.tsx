@@ -26,6 +26,7 @@ export default async function NewEmployeePage() {
         </CardHeader>
         <CardContent>
           <EmployeeForm
+            companyId={companyId ?? ""}
             departments={(departments ?? []).map((d) => ({ id: d.id, label: d.name }))}
             positions={(positions ?? []).map((p) => ({ id: p.id, label: p.title }))}
             supervisors={(employees ?? []).map((e) => ({ id: e.id, label: `${e.first_name} ${e.last_name}` }))}

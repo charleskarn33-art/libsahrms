@@ -39,6 +39,7 @@ Migrations live in `supabase/migrations/` and must be applied **in order** — l
 | `0005_multi_company.sql` | Adds `companies` (replacing the single-row `company_settings`) and `company_memberships`; scopes every table with a `company_id`; re-scopes the payroll engine and views per company |
 | `0006_multi_company_rls.sql` | Rewrites every RLS policy (and the four storage policies) to be company-scoped instead of single-tenant |
 | `0007_default_company.sql` | Adds `profiles.default_company_id` and a `set_default_company` RPC so a company's HR/Admin can pin which company a user lands in after login |
+| `0008_employee_photos.sql` | Adds the public `employee-photos` storage bucket (company-scoped by path, not by an `employees` row lookup, so a photo can be attached while creating a brand-new employee) |
 
 Then seed a starter company with sample departments, positions, and announcements:
 

@@ -30,7 +30,7 @@ export async function createEmployee(input: unknown): Promise<ActionResult<{ id:
   if (!companyId) return { success: false, error: "No company selected" };
 
   const supabase = await createClient();
-  const payload = cleanUuidFields(parsed.data, ["department_id", "position_id", "supervisor_id"]);
+  const payload = cleanUuidFields(parsed.data, ["department_id", "position_id", "supervisor_id", "photo_url"]);
 
   const { data, error } = await supabase
     .from("employees")
@@ -55,7 +55,7 @@ export async function updateEmployee(id: string, input: unknown): Promise<Action
 
   const companyId = await getCurrentCompanyId();
   const supabase = await createClient();
-  const payload = cleanUuidFields(parsed.data, ["department_id", "position_id", "supervisor_id"]);
+  const payload = cleanUuidFields(parsed.data, ["department_id", "position_id", "supervisor_id", "photo_url"]);
 
   const { error } = await supabase.from("employees").update(payload).eq("id", id);
 

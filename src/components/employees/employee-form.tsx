@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { employeeSchema, type EmployeeInput } from "@/lib/validations/employee";
 import { createEmployee, updateEmployee } from "@/actions/employees";
+import { EmployeePhotoUpload } from "@/components/employees/employee-photo-upload";
 
 interface Option {
   id: string;
@@ -22,12 +23,14 @@ interface Option {
 
 export function EmployeeForm({
   employeeId,
+  companyId,
   defaultValues,
   departments,
   positions,
   supervisors,
 }: {
   employeeId?: string;
+  companyId: string;
   defaultValues?: Partial<EmployeeInput>;
   departments: Option[];
   positions: Option[];
@@ -40,6 +43,8 @@ export function EmployeeForm({
     register,
     handleSubmit,
     control,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<EmployeeInput>({
     resolver: zodResolver(employeeSchema),
@@ -86,6 +91,13 @@ export function EmployeeForm({
         </TabsList>
 
         <TabsContent value="personal" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="sm:col-span-2 lg:col-span-3">
+            <EmployeePhotoUpload
+              companyId={companyId}
+              value={watch("photo_url") || undefined}
+              onChange={(url) => setValue("photo_url", url, { shouldDirty: true })}
+            />
+          </div>
           <Field label="Employee Number" error={errors.employee_number?.message}>
             <Input {...register("employee_number")} placeholder="LIB-0142" />
           </Field>

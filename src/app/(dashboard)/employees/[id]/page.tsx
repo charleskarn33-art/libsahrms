@@ -63,8 +63,10 @@ export default async function EmployeeDetailPage({
           <CardContent>
             <EmployeeForm
               employeeId={id}
+              companyId={emp.company_id}
               defaultValues={{
                 ...emp,
+                photo_url: emp.photo_url ?? "",
                 middle_name: emp.middle_name ?? "",
                 date_of_birth: emp.date_of_birth ?? "",
                 nationality: emp.nationality ?? "",
