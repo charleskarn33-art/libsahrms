@@ -40,6 +40,8 @@ Migrations live in `supabase/migrations/` and must be applied **in order** — l
 | `0006_multi_company_rls.sql` | Rewrites every RLS policy (and the four storage policies) to be company-scoped instead of single-tenant |
 | `0007_default_company.sql` | Adds `profiles.default_company_id` and a `set_default_company` RPC so a company's HR/Admin can pin which company a user lands in after login |
 | `0008_employee_photos.sql` | Adds the public `employee-photos` storage bucket (company-scoped by path, not by an `employees` row lookup, so a photo can be attached while creating a brand-new employee) |
+| `0009_probation_status.sql` | Adds `'probation'` to the `employment_status` enum |
+| `0010_employee_directory_extra_fields.sql` | Appends `gender` and `tin` to the `v_employee_directory` view for the Employee Database page's stat cards and name-card TIN line |
 
 Then seed a starter company with sample departments, positions, and announcements:
 
@@ -94,7 +96,7 @@ LIBSA Consultancy provides HR/payroll as a service to multiple client companies,
 - App shell (sidebar, topbar, theme toggle, notifications) and dashboard matching the LIBSA brand
 
 **Phase 2 — Core HR**
-- Employee Management: full CRUD, tabbed form covering every field in the spec, directory with search + pagination
+- Employee Management: full CRUD, tabbed form (with photo upload) covering every field in the spec; Employee Database view with gender/probation/inactive stat cards, department/status/type filters, checkbox multi-select + bulk delete, numbered pagination, and CSV Import/Export
 - Departments & Positions: CRUD, headcount + payroll cost cards
 - Attendance: clock in/out, per-employee and team history
 - Leave: request workflow, HR approval/rejection, balance tracking

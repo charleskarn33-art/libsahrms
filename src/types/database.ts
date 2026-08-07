@@ -8,7 +8,7 @@ export type UserRole =
   | "auditor";
 
 export type EmploymentType = "full_time" | "part_time" | "contract" | "intern" | "temporary";
-export type EmploymentStatus = "active" | "on_leave" | "suspended" | "terminated" | "resigned" | "retired";
+export type EmploymentStatus = "active" | "probation" | "on_leave" | "suspended" | "terminated" | "resigned" | "retired";
 export type MaritalStatus = "single" | "married" | "divorced" | "widowed";
 export type Gender = "male" | "female" | "other";
 export type TaxStatus = "single" | "married" | "exempt";
@@ -186,6 +186,9 @@ export interface EmployeeDirectoryRow {
   department_name: string | null;
   position_title: string | null;
   supervisor_name: string | null;
+  company_id: string;
+  gender: Gender | null;
+  tin: string | null;
 }
 
 export interface PayrollPeriod {

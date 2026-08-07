@@ -26,7 +26,7 @@ export const employeeSchema = z.object({
   supervisor_id: z.string().uuid().optional().or(z.literal("")),
 
   employment_type: z.enum(["full_time", "part_time", "contract", "intern", "temporary"]),
-  employment_status: z.enum(["active", "on_leave", "suspended", "terminated", "resigned", "retired"]),
+  employment_status: z.enum(["active", "probation", "on_leave", "suspended", "terminated", "resigned", "retired"]),
   date_hired: z.string().min(1, "Date hired is required"),
 
   salary_grade: z.string().optional().or(z.literal("")),

@@ -7,6 +7,7 @@ import type { Employee, EmploymentStatus } from "@/types/database";
 
 const STATUS_VARIANT: Record<EmploymentStatus, "success" | "warning" | "danger" | "outline"> = {
   active: "success",
+  probation: "warning",
   on_leave: "warning",
   suspended: "warning",
   terminated: "danger",

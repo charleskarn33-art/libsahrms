@@ -213,7 +213,7 @@ export function EmployeeForm({
             <SelectField
               control={control}
               name="employment_status"
-              options={["active", "on_leave", "suspended", "terminated", "resigned", "retired"]}
+              options={["active", "probation", "on_leave", "suspended", "terminated", "resigned", "retired"]}
             />
           </Field>
           <Field label="Date Hired" error={errors.date_hired?.message}>

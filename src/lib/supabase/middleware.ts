@@ -10,7 +10,7 @@ const COMPANY_EXEMPT_PATHS = ["/companies", "/settings/users"];
 // role in the *current* company. Missing entries = any company member allowed.
 const ROUTE_ROLES: Record<string, UserRole[]> = {
   employees: ["super_admin", "hr_manager", "payroll_officer", "finance_manager", "managing_director", "auditor"],
-  departments: ["super_admin", "hr_manager", "managing_director", "auditor"],
+  departments: ["super_admin", "hr_manager", "payroll_officer", "finance_manager", "managing_director", "auditor"],
   payroll: ["super_admin", "hr_manager", "payroll_officer", "finance_manager", "managing_director"],
   loans: ["super_admin", "hr_manager", "payroll_officer", "finance_manager", "managing_director"],
   reports: ["super_admin", "hr_manager", "finance_manager", "managing_director", "auditor"],
