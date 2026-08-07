@@ -38,7 +38,7 @@ function LoginForm() {
       return;
     }
 
-    router.push(searchParams.get("redirectTo") || "/dashboard");
+    router.push(searchParams.get("redirectTo") || "/select-company");
     router.refresh();
   }
 
