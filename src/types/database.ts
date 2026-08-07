@@ -33,7 +33,8 @@ export type PayrollApprovalStage =
   | "finance_review"
   | "director_approval"
   | "payroll_locked"
-  | "payslips_sent";
+  | "payslips_sent"
+  | "payments_processed";
 
 export interface Profile {
   id: string;

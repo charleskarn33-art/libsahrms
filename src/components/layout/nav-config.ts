@@ -61,6 +61,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Wallet,
     roles: ["super_admin", "hr_manager", "payroll_officer", "finance_manager", "managing_director"],
     children: [
+      { label: "Payroll Dashboard", href: "/payroll" },
       { label: "Payroll Periods", href: "/payroll/periods" },
       { label: "Approve Payroll", href: "/approvals" },
       { label: "Payslips", href: "/payroll/payslips" },

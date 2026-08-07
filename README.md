@@ -42,6 +42,7 @@ Migrations live in `supabase/migrations/` and must be applied **in order** — l
 | `0008_employee_photos.sql` | Adds the public `employee-photos` storage bucket (company-scoped by path, not by an `employees` row lookup, so a photo can be attached while creating a brand-new employee) |
 | `0009_probation_status.sql` | Adds `'probation'` to the `employment_status` enum |
 | `0010_employee_directory_extra_fields.sql` | Appends `gender` and `tin` to the `v_employee_directory` view for the Employee Database page's stat cards and name-card TIN line |
+| `0011_payments_processed_stage.sql` | Adds `'payments_processed'` as the sixth (final) stage of `payroll_approval_stage`, after `payslips_sent` |
 
 Then seed a starter company with sample departments, positions, and announcements:
 
@@ -102,6 +103,7 @@ LIBSA Consultancy provides HR/payroll as a service to multiple client companies,
 - Leave: request workflow, HR approval/rejection, balance tracking
 
 **Phase 3 — Payroll workflow**
+- Payroll Dashboard (`/payroll`): current-period stat cards, the 6-stage approval workflow, a paginated periods table with Created By and a real per-period detail page (`/payroll/periods/[id]`, with a CSV export of the employee-level breakdown), Department Payroll Summary, a Deductions Breakdown donut chart, a Payroll Summary card, Quick Actions, and a Payroll Activities feed sourced from `audit_logs`
 - Payroll Periods: create a period, generate payroll (`generate_payroll_items` RPC), and drive it through the HR → Finance → Director → Locked stages with role-gated actions
 - Unified Approvals inbox aggregating pending leave, loan, and payroll decisions
 - Loans & Advances: request + approve/reject, feeds `loan_deductions` in the payroll calculation

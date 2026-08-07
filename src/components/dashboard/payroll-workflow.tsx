@@ -1,7 +1,7 @@
-import { Check } from "lucide-react";
+import { Check, History } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import Link from "next/link";
 import type { PayrollApprovalStage } from "@/types/database";
 
@@ -10,22 +10,36 @@ const STAGES: { key: PayrollApprovalStage; label: string }[] = [
   { key: "finance_review", label: "Finance Review" },
   { key: "director_approval", label: "Director Approval" },
   { key: "payroll_locked", label: "Payroll Locked" },
-  { key: "payslips_sent", label: "Payslips Sent" },
+  { key: "payslips_sent", label: "Payslips Generated" },
+  { key: "payments_processed", label: "Payments Processed" },
 ];
 
 export function PayrollWorkflow({
   currentStage,
   periodLabel,
+  hrPreparedAt,
+  showHistoryLink = false,
+  detailsHref = "/payroll/periods",
 }: {
   currentStage: PayrollApprovalStage | null;
   periodLabel: string | null;
+  hrPreparedAt?: string | null;
+  showHistoryLink?: boolean;
+  detailsHref?: string;
 }) {
   const currentIndex = currentStage ? STAGES.findIndex((s) => s.key === currentStage) : -1;
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle>Payroll Approval Workflow</CardTitle>
+        {showHistoryLink && (
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/audit-logs">
+              <History className="h-4 w-4" /> View Approval History
+            </Link>
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {!periodLabel ? (
@@ -55,8 +69,11 @@ export function PayrollWorkflow({
                     </div>
                     <p className="mt-2 text-xs font-medium">{stage.label}</p>
                     <p className={cn("text-[11px]", done ? "text-secondary" : active ? "text-primary" : "text-muted-foreground")}>
-                      {done ? "Completed" : active ? "Pending" : "Pending"}
+                      {done ? "Completed" : active ? "In Progress" : "Pending"}
                     </p>
+                    {idx === 0 && done && hrPreparedAt && (
+                      <p className="text-[10px] text-muted-foreground">{formatDate(hrPreparedAt)}</p>
+                    )}
                   </div>
                 );
               })}
@@ -69,7 +86,7 @@ export function PayrollWorkflow({
                   : `${periodLabel} status unknown.`}
               </p>
               <Button size="sm" asChild>
-                <Link href="/payroll/periods">View Payroll Details</Link>
+                <Link href={detailsHref}>View Payroll Details</Link>
               </Button>
             </div>
           </>
