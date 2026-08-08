@@ -86,7 +86,16 @@ export const NAV_ITEMS: NavItem[] = [
     roles: ["super_admin", "hr_manager", "payroll_officer", "finance_manager", "managing_director"],
   },
   { label: "Benefits", href: "/benefits", icon: Gift, roles: ALL_STAFF },
-  { label: "Tax & NASSCORP", href: "/nasscorp", icon: Landmark, roles: ALL_STAFF },
+  {
+    label: "Tax & NASSCORP",
+    href: "/nasscorp",
+    icon: Landmark,
+    roles: ALL_STAFF,
+    children: [
+      { label: "Overview", href: "/nasscorp" },
+      { label: "Tax Settings", href: "/settings" },
+    ],
+  },
   {
     label: "Reports",
     href: "/reports",

@@ -235,6 +235,21 @@ export interface LeaveRequest {
   created_at: string;
 }
 
+export type TaxRemittanceStatus = "pending" | "paid";
+
+export interface TaxRemittance {
+  id: string;
+  company_id: string;
+  payroll_period_id: string;
+  status: TaxRemittanceStatus;
+  payment_date: string;
+  receipt_reference: string | null;
+  notes: string | null;
+  recorded_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PublicHoliday {
   id: string;
   company_id: string;
