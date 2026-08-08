@@ -2,10 +2,11 @@ import "server-only";
 import { Resend } from "resend";
 
 export function getResendClient(): Resend | null {
-  if (!process.env.RESEND_API_KEY) return null;
-  return new Resend(process.env.RESEND_API_KEY);
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) return null;
+  return new Resend(apiKey);
 }
 
 export function getResendFromAddress(): string {
-  return process.env.RESEND_FROM_EMAIL || "LIBSA Payroll <payroll@libsaconsultancy.com>";
+  return process.env.RESEND_FROM_EMAIL?.trim() || "LIBSA Payroll <payroll@libsaconsultancy.com>";
 }

@@ -4,13 +4,25 @@ import { getResendClient, getResendFromAddress } from "@/lib/resend";
 
 export type MailProvider = "resend" | "gmail" | null;
 
+// Trims stray whitespace/newlines from a pasted env var value.
+function cleanEnv(value: string | undefined): string | undefined {
+  return value?.trim() || undefined;
+}
+
+// Google displays App Passwords grouped as "abcd efgh ijkl mnop" for
+// readability — the real password has no spaces, but it's easy to paste it
+// exactly as shown. Strip all whitespace, not just leading/trailing.
+function cleanAppPassword(value: string | undefined): string | undefined {
+  return value?.replace(/\s+/g, "") || undefined;
+}
+
 /**
  * Resend wins whenever it's configured, so adding RESEND_API_KEY later
  * (once a sending domain is verified) switches providers with no code change.
  */
 export function getConfiguredMailProvider(): MailProvider {
-  if (process.env.RESEND_API_KEY) return "resend";
-  if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) return "gmail";
+  if (cleanEnv(process.env.RESEND_API_KEY)) return "resend";
+  if (cleanEnv(process.env.GMAIL_USER) && cleanAppPassword(process.env.GMAIL_APP_PASSWORD)) return "gmail";
   return null;
 }
 
@@ -45,9 +57,9 @@ async function sendViaResend(input: SendMailInput): Promise<SendMailResult> {
 }
 
 async function sendViaGmail(input: SendMailInput): Promise<SendMailResult> {
-  const user = process.env.GMAIL_USER!;
-  const pass = process.env.GMAIL_APP_PASSWORD!;
-  const fromName = process.env.GMAIL_FROM_NAME || "LIBSA Payroll";
+  const user = cleanEnv(process.env.GMAIL_USER)!;
+  const pass = cleanAppPassword(process.env.GMAIL_APP_PASSWORD)!;
+  const fromName = cleanEnv(process.env.GMAIL_FROM_NAME) || "LIBSA Payroll";
 
   const transport = nodemailer.createTransport({
     host: "smtp.gmail.com",
