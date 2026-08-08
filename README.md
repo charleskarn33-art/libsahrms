@@ -6,8 +6,8 @@ A Human Resource & Payroll Management System for **LIBSA Consultancy**, built wi
 
 - **Frontend:** Next.js 15 (App Router), TypeScript, Tailwind CSS, Radix UI primitives, Lucide Icons, React Hook Form + Zod, TanStack Table, Recharts, Framer Motion-ready
 - **Backend:** Supabase (PostgreSQL, Auth, Row Level Security, Storage)
-- **Email:** Resend API (wired for Phase 4)
-- **PDF:** @react-pdf/renderer (wired for Phase 4)
+- **Email:** Resend API — payslip delivery (Phase 4)
+- **PDF:** @react-pdf/renderer — branded payslips + QR verification (Phase 4)
 - **Deployment:** Vercel + Supabase
 
 ## Getting started
@@ -113,13 +113,20 @@ LIBSA Consultancy provides HR/payroll as a service to multiple client companies,
 - Companies (Super Admin): create client companies, invite/remove staff with a per-company role, company switcher
 - Audit Logs, In-app Notifications, Employee Self-Service landing page
 
+**Phase 4 — Payslips & delivery**
+- `generatePayslips` (`src/actions/payslips.ts`): once a period is `locked`, renders one branded A4 PDF per employee with `@react-pdf/renderer` (`src/lib/payslip-pdf.tsx`) — company logo/watermark, employee + period info grid, Earnings/Deductions/Employer Contribution tables, a highlighted Net Salary box, bank/Orange Money details, and a verification QR code (`qrcode`) — uploads each to the `payslips` storage bucket, inserts a `payslips` row with a globally-unique `{COMPANY_SLUG}-{YYYYMM}-{employeeNumber}` payslip number, and queues a `payslip_deliveries` row (idempotent — re-running only fills gaps, never duplicates)
+- `/payroll/payslips`: period picker, a generate-payslips empty state, and once generated, a table of every payslip with delivery-status badges, in-browser View/Download (`/api/payslips/[id]`, RLS-gated — the route does no manual role check because a row the caller can't `select` is invisible), per-row Send/Resend, and bulk Send All / Retry Failed / Mark Payments Processed actions — reusing the dashboard's Payslip Distribution donut
+- Email delivery via Resend (`src/lib/resend.ts`, `src/lib/email-templates.ts`): each employee is emailed only their own payslip PDF as an attachment; `payslip_deliveries.status` moves `queued → sent` or `queued → failed` with the error message stored for retry
+- `markPaymentsProcessed` closes the loop: once payslips are sent, payroll staff can mark the period `paid` (`approval_stage: payments_processed`), the final stage in the workflow
+- **Honest gap:** `delivered`/`opened` are real states in the `PayslipDeliveryStatus` type and schema, but nothing populates them yet — that requires wiring a Resend webhook (delivery/open events) to update `payslip_deliveries`, which is not implemented. Only `queued`, `sent`, and `failed` are reachable today.
+- **Not yet verified against a live environment:** the PDF pipeline was smoke-tested locally (rendered and rasterized a real payslip PDF to confirm layout), and `generatePayslips`/`sendOneDelivery` type-check and build clean, but neither has been run against the live Supabase project or a real Resend account from this sandbox (network policy blocks both) — please test one full generate → send cycle on staging before relying on it for real payroll.
+
 ## Roadmap — not yet built
 
-These are scoped and the schema already supports them (see the in-app "coming in Phase N" panels on `/payroll/payslips`, `/reports`, `/nasscorp`):
+These are scoped and the schema already supports them (see the in-app "coming in Phase N" panels on `/reports`, `/nasscorp`):
 
-- **Phase 4 — Payslips & delivery:** render branded PDF payslips with `@react-pdf/renderer` from locked `payroll_items`, store them in the `payslips` bucket, email each employee only their own payslip via Resend, track delivery/open status in `payslip_deliveries`, QR code + unique payslip number
 - **Phase 5 — Reports & analytics:** payroll summary, department cost, tax/NASSCORP remittance, attendance, leave, loan, and bank/Orange Money transfer reports; PDF/Excel/CSV export; richer dashboard analytics
-- **Phase 6 — Hardening:** automated tests, rate limiting on auth routes, CSV/Excel bulk employee import, birthday/contract-expiry notification cron (Supabase Edge Function + `pg_cron`), AI payroll assistant, and a documented deployment runbook for Vercel + Supabase
+- **Phase 6 — Hardening:** automated tests, rate limiting on auth routes, CSV/Excel bulk employee import, birthday/contract-expiry notification cron (Supabase Edge Function + `pg_cron`), AI payroll assistant, Resend delivery/open webhooks, and a documented deployment runbook for Vercel + Supabase
 
 ## Project structure
 
@@ -147,6 +154,6 @@ supabase/
 ## Notes for reviewers
 
 - `npm run build` and `npx tsc --noEmit` both pass clean; `next lint` reports no warnings.
-- The service-role Supabase client (`src/lib/supabase/admin.ts`) is imported with `server-only`. It's used narrowly today — `inviteMember` needs it to look up a brand-new invitee's profile by email, since a person who shares no company with the inviter yet is invisible to the inviter under RLS. It's also reserved for the Phase 4 payslip/email pipeline, which must bypass RLS to fan out per-employee emails safely.
+- The service-role Supabase client (`src/lib/supabase/admin.ts`) is imported with `server-only`. It's used narrowly — `inviteMember` needs it to look up a brand-new invitee's profile by email, since a person who shares no company with the inviter yet is invisible to the inviter under RLS. The Phase 4 payslip/email pipeline turned out not to need it: the `payslips` bucket's storage policies (`0006_multi_company_rls.sql`) already grant payroll staff and the owning employee read access under RLS, so `generatePayslips`/`sendOneDelivery` run entirely on the regular authenticated client.
 - Payroll amounts are computed in SQL (`compute_payroll_item`), not in application code, so the numbers shown in the UI and the numbers used for payslips can never drift apart.
 - **`0005`/`0006` (multi-company) were written and reviewed without a live database to run them against** — this sandbox's network policy blocks outbound access to Supabase. They were checked carefully by hand (and two real bugs were caught this way: a `CREATE OR REPLACE VIEW` column-reordering violation, and a dangling function-overload dependency), but please run them against a staging project before production and report back if anything errors partway through.

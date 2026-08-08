@@ -15,6 +15,7 @@ export type TaxStatus = "single" | "married" | "exempt";
 
 export type AttendanceStatus = "present" | "late" | "early_leave" | "absent" | "holiday" | "weekend" | "on_leave";
 export type LoanStatus = "pending" | "approved" | "active" | "completed" | "rejected" | "cancelled";
+export type PayslipDeliveryStatus = "queued" | "sent" | "delivered" | "opened" | "failed";
 
 export type LeaveType =
   | "annual"
