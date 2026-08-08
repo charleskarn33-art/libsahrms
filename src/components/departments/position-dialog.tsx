@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -13,12 +13,31 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { positionSchema, type PositionInput } from "@/lib/validations/department";
-import { createPosition } from "@/actions/departments";
+import { createPosition, updatePosition } from "@/actions/departments";
 
-export function PositionDialog({ departments }: { departments: { id: string; label: string }[] }) {
+export interface PositionRecord {
+  id: string;
+  title: string;
+  department_id: string | null;
+  salary_grade: string | null;
+  min_salary: number | null;
+  max_salary: number | null;
+  description: string | null;
+}
+
+export function PositionDialog({
+  departments,
+  position,
+  trigger,
+}: {
+  departments: { id: string; label: string }[];
+  position?: PositionRecord;
+  trigger?: ReactNode;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const isEdit = !!position;
 
   const {
     register,
@@ -26,11 +45,23 @@ export function PositionDialog({ departments }: { departments: { id: string; lab
     control,
     reset,
     formState: { errors },
-  } = useForm<PositionInput>({ resolver: zodResolver(positionSchema) });
+  } = useForm<PositionInput>({
+    resolver: zodResolver(positionSchema),
+    defaultValues: position
+      ? {
+          title: position.title,
+          department_id: position.department_id ?? "",
+          salary_grade: position.salary_grade ?? "",
+          min_salary: position.min_salary ?? undefined,
+          max_salary: position.max_salary ?? undefined,
+          description: position.description ?? "",
+        }
+      : undefined,
+  });
 
   async function onSubmit(values: PositionInput) {
     setSubmitting(true);
-    const result = await createPosition(values);
+    const result = isEdit ? await updatePosition(position.id, values) : await createPosition(values);
     setSubmitting(false);
 
     if (!result.success) {
@@ -38,8 +69,8 @@ export function PositionDialog({ departments }: { departments: { id: string; lab
       return;
     }
 
-    toast.success("Position created");
-    reset();
+    toast.success(isEdit ? "Position updated" : "Position created");
+    if (!isEdit) reset();
     setOpen(false);
     router.refresh();
   }
@@ -47,13 +78,15 @@ export function PositionDialog({ departments }: { departments: { id: string; lab
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <Plus className="h-4 w-4" /> Add Position
-        </Button>
+        {trigger ?? (
+          <Button variant="outline">
+            <Plus className="h-4 w-4" /> Add Position
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New Position</DialogTitle>
+          <DialogTitle>{isEdit ? "Edit Position" : "New Position"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
@@ -99,7 +132,7 @@ export function PositionDialog({ departments }: { departments: { id: string; lab
           <DialogFooter>
             <Button type="submit" variant="gradient" disabled={submitting}>
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Create Position
+              {isEdit ? "Save Changes" : "Create Position"}
             </Button>
           </DialogFooter>
         </form>

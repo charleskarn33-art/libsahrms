@@ -84,6 +84,21 @@ export async function createPosition(input: unknown): Promise<ActionResult> {
   return { success: true };
 }
 
+export async function updatePosition(id: string, input: unknown): Promise<ActionResult> {
+  const parsed = positionSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+  const companyId = await getCurrentCompanyId();
+  const supabase = await createClient();
+  const payload = nullifyEmpty(parsed.data, ["department_id", "salary_grade", "description"]);
+  const { error } = await supabase.from("positions").update(payload).eq("id", id);
+  if (error) return { success: false, error: error.message };
+
+  await logAudit({ action: "position_updated", entityType: "position", entityId: id, companyId });
+  revalidatePath("/departments");
+  return { success: true };
+}
+
 export async function deletePosition(id: string): Promise<ActionResult> {
   const companyId = await getCurrentCompanyId();
   const supabase = await createClient();

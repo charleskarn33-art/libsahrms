@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -13,12 +13,29 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { departmentSchema, type DepartmentInput } from "@/lib/validations/department";
-import { createDepartment } from "@/actions/departments";
+import { createDepartment, updateDepartment } from "@/actions/departments";
 
-export function DepartmentDialog({ employees }: { employees: { id: string; label: string }[] }) {
+export interface DepartmentRecord {
+  id: string;
+  name: string;
+  code: string | null;
+  description: string | null;
+  head_employee_id: string | null;
+}
+
+export function DepartmentDialog({
+  employees,
+  department,
+  trigger,
+}: {
+  employees: { id: string; label: string }[];
+  department?: DepartmentRecord;
+  trigger?: ReactNode;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const isEdit = !!department;
 
   const {
     register,
@@ -26,11 +43,21 @@ export function DepartmentDialog({ employees }: { employees: { id: string; label
     control,
     reset,
     formState: { errors },
-  } = useForm<DepartmentInput>({ resolver: zodResolver(departmentSchema) });
+  } = useForm<DepartmentInput>({
+    resolver: zodResolver(departmentSchema),
+    defaultValues: department
+      ? {
+          name: department.name,
+          code: department.code ?? "",
+          description: department.description ?? "",
+          head_employee_id: department.head_employee_id ?? "",
+        }
+      : undefined,
+  });
 
   async function onSubmit(values: DepartmentInput) {
     setSubmitting(true);
-    const result = await createDepartment(values);
+    const result = isEdit ? await updateDepartment(department.id, values) : await createDepartment(values);
     setSubmitting(false);
 
     if (!result.success) {
@@ -38,8 +65,8 @@ export function DepartmentDialog({ employees }: { employees: { id: string; label
       return;
     }
 
-    toast.success("Department created");
-    reset();
+    toast.success(isEdit ? "Department updated" : "Department created");
+    if (!isEdit) reset();
     setOpen(false);
     router.refresh();
   }
@@ -47,13 +74,15 @@ export function DepartmentDialog({ employees }: { employees: { id: string; label
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="gradient">
-          <Plus className="h-4 w-4" /> Add Department
-        </Button>
+        {trigger ?? (
+          <Button variant="gradient">
+            <Plus className="h-4 w-4" /> Add Department
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New Department</DialogTitle>
+          <DialogTitle>{isEdit ? "Edit Department" : "New Department"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
@@ -93,7 +122,7 @@ export function DepartmentDialog({ employees }: { employees: { id: string; label
           <DialogFooter>
             <Button type="submit" variant="gradient" disabled={submitting}>
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Create Department
+              {isEdit ? "Save Changes" : "Create Department"}
             </Button>
           </DialogFooter>
         </form>

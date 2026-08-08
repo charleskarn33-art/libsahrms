@@ -16,6 +16,17 @@
     --input: 214 32% 91%;
     --ring: 221 100% 50%;
     --radius: 0.85rem;
+
+    /* Categorical palette for org-chart department coloring — fixed order, never cycled. */
+    --dept-1: #2a78d6;
+    --dept-2: #eb6834;
+    --dept-3: #1baf7a;
+    --dept-4: #eda100;
+    --dept-5: #e87ba4;
+    --dept-6: #008300;
+    --dept-7: #4a3aa7;
+    --dept-8: #e34948;
+    --dept-other: #898781;
   }
 
   .dark {
@@ -30,6 +41,16 @@
     --border: 222 30% 18%;
     --input: 222 30% 18%;
     --ring: 221 100% 60%;
+
+    --dept-1: #3987e5;
+    --dept-2: #d95926;
+    --dept-3: #199e70;
+    --dept-4: #c98500;
+    --dept-5: #d55181;
+    --dept-6: #008300;
+    --dept-7: #9085e9;
+    --dept-8: #e66767;
+    --dept-other: #898781;
   }
 
   * {
