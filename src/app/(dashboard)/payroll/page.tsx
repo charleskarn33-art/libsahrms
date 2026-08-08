@@ -75,7 +75,7 @@ export default async function PayrollDashboardPage() {
   const { data: currentItems } = currentPeriod
     ? await supabase
         .from("payroll_items")
-        .select("gross_salary, total_deductions, net_salary, employee_nasscorp, income_tax, loan_deductions, other_deductions, orange_money_fee, employees(department_id, departments(name))")
+        .select("gross_salary, total_deductions, net_salary, employee_nasscorp, income_tax, loan_deductions, other_deductions, orange_money_fee, employees(department_id, departments!department_id(name))")
         .eq("payroll_period_id", currentPeriod.id)
     : { data: [] };
 

@@ -49,7 +49,7 @@ export default async function LeaveReportPage({ searchParams }: { searchParams: 
   const { data: requests } = await supabase
     .from("leave_requests")
     .select(
-      "leave_type, start_date, end_date, days_requested, status, employees(employee_number, first_name, last_name, departments(name))"
+      "leave_type, start_date, end_date, days_requested, status, employees(employee_number, first_name, last_name, departments!department_id(name))"
     )
     .eq("company_id", companyId ?? "")
     .eq("status", "approved")

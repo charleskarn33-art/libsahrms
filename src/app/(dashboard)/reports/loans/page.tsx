@@ -51,7 +51,7 @@ export default async function LoansReportPage() {
   const { data: loans } = await supabase
     .from("loans")
     .select(
-      "loan_type, principal_amount, monthly_deduction, balance_remaining, status, requested_at, employees(employee_number, first_name, last_name, departments(name))"
+      "loan_type, principal_amount, monthly_deduction, balance_remaining, status, requested_at, employees(employee_number, first_name, last_name, departments!department_id(name))"
     )
     .eq("company_id", companyId ?? "")
     .order("requested_at", { ascending: false });
