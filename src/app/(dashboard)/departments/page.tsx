@@ -1,6 +1,7 @@
-import { Building2, Users } from "lucide-react";
+import { Building2, Pencil, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/company";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DepartmentDialog } from "@/components/departments/department-dialog";
@@ -15,15 +16,20 @@ export default async function DepartmentsPage() {
     supabase.from("v_department_headcount").select("*").eq("company_id", companyId ?? "").order("department_name"),
     supabase
       .from("positions")
-      .select("id, title, salary_grade, min_salary, max_salary, departments(name)")
+      .select("id, title, department_id, salary_grade, min_salary, max_salary, description, departments(name)")
       .eq("company_id", companyId ?? "")
       .order("title"),
-    supabase.from("departments").select("id, name, description").eq("company_id", companyId ?? "").order("name"),
+    supabase
+      .from("departments")
+      .select("id, name, code, description, head_employee_id")
+      .eq("company_id", companyId ?? "")
+      .order("name"),
     supabase.from("employees").select("id, first_name, last_name").eq("company_id", companyId ?? "").order("first_name"),
   ]);
 
   const employeeOptions = (employees ?? []).map((e) => ({ id: e.id, label: `${e.first_name} ${e.last_name}` }));
   const departmentOptions = (departments ?? []).map((d) => ({ id: d.id, label: d.name }));
+  const departmentsById = new Map((departments ?? []).map((d) => [d.id, d]));
 
   return (
     <div className="space-y-6">
@@ -39,25 +45,39 @@ export default async function DepartmentsPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {(headcount ?? []).map((d) => (
-          <Card key={d.department_id}>
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Building2 className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{d.department_name}</p>
-                <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Users className="h-3 w-3" /> {d.active_headcount} employees
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Basic Payroll</p>
-                <p className="text-sm font-semibold">{formatCurrency(Number(d.total_basic_salary))}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {(headcount ?? []).map((d) => {
+          const record = d.department_id ? departmentsById.get(d.department_id) : undefined;
+          return (
+            <Card key={d.department_id}>
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Building2 className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{d.department_name}</p>
+                  <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Users className="h-3 w-3" /> {d.active_headcount} employees
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">Basic Payroll</p>
+                  <p className="text-sm font-semibold">{formatCurrency(Number(d.total_basic_salary))}</p>
+                </div>
+                {record && (
+                  <DepartmentDialog
+                    employees={employeeOptions}
+                    department={record}
+                    trigger={
+                      <Button variant="ghost" size="icon" className="shrink-0">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
         {(headcount ?? []).length === 0 && (
           <p className="text-sm text-muted-foreground">No departments yet — add one to get started.</p>
         )}
@@ -75,12 +95,13 @@ export default async function DepartmentsPage() {
                 <TableHead>Department</TableHead>
                 <TableHead>Salary Grade</TableHead>
                 <TableHead>Salary Range</TableHead>
+                <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {(positions ?? []).length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="py-10 text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
                     No positions yet.
                   </TableCell>
                 </TableRow>
@@ -94,6 +115,17 @@ export default async function DepartmentsPage() {
                     {p.min_salary || p.max_salary
                       ? `${formatCurrency(Number(p.min_salary ?? 0))} – ${formatCurrency(Number(p.max_salary ?? 0))}`
                       : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <PositionDialog
+                      departments={departmentOptions}
+                      position={p}
+                      trigger={
+                        <Button variant="ghost" size="icon">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
                   </TableCell>
                 </TableRow>
               ))}
