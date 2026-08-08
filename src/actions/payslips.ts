@@ -67,7 +67,7 @@ export async function generatePayslips(periodId: string): Promise<ActionResult<{
        gross_salary, employee_nasscorp, employer_nasscorp, income_tax, loan_deductions, other_deductions, orange_money_fee,
        total_deductions, net_salary, employee_id,
        employees(first_name, last_name, employee_number, email, bank_name, bank_account_number, orange_money_number, payment_method,
-         departments(name), positions(title))`
+         departments!department_id(name), positions(title))`
     )
     .eq("payroll_period_id", periodId);
 

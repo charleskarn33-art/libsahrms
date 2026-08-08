@@ -50,7 +50,7 @@ export default async function AttendanceReportPage({ searchParams }: { searchPar
 
   const { data: records } = await supabase
     .from("attendance_records")
-    .select("work_date, status, overtime_hours, employees(employee_number, first_name, last_name, departments(name))")
+    .select("work_date, status, overtime_hours, employees(employee_number, first_name, last_name, departments!department_id(name))")
     .eq("company_id", companyId ?? "")
     .gte("work_date", from)
     .lte("work_date", to);

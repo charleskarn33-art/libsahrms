@@ -26,7 +26,7 @@ export default async function LeavePage() {
   const query = supabase
     .from("leave_requests")
     .select(
-      "id, leave_type, start_date, end_date, days_requested, status, reason, created_at, employees(employee_number, first_name, last_name, photo_url, departments(name))"
+      "id, leave_type, start_date, end_date, days_requested, status, reason, created_at, employees(employee_number, first_name, last_name, photo_url, departments!department_id(name))"
     )
     .eq("company_id", companyId ?? "")
     .order("created_at", { ascending: false });

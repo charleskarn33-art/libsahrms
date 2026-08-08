@@ -67,7 +67,7 @@ export default async function DepartmentCostReportPage({ searchParams }: { searc
   if (periodId) {
     const { data: items } = await supabase
       .from("payroll_items")
-      .select("gross_salary, total_deductions, net_salary, employees(departments(name))")
+      .select("gross_salary, total_deductions, net_salary, employees(departments!department_id(name))")
       .eq("payroll_period_id", periodId);
 
     const byDept = new Map<string, DeptCostRow>();

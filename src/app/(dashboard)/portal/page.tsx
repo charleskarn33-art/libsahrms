@@ -12,7 +12,7 @@ export default async function PortalPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: employee } = await supabase.from("employees").select("*, departments(name), positions(title)").eq("profile_id", user?.id ?? "").maybeSingle();
+  const { data: employee } = await supabase.from("employees").select("*, departments!department_id(name), positions(title)").eq("profile_id", user?.id ?? "").maybeSingle();
 
   const { data: payslips } = employee
     ? await supabase

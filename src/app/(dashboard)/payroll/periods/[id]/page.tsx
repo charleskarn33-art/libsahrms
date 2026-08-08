@@ -40,7 +40,7 @@ export default async function PayrollPeriodDetailPage({ params }: { params: Prom
   const { data: items } = await supabase
     .from("payroll_items")
     .select(
-      "basic_salary, gross_salary, employee_nasscorp, income_tax, loan_deductions, total_deductions, net_salary, employees(employee_number, first_name, last_name, departments(name))"
+      "basic_salary, gross_salary, employee_nasscorp, income_tax, loan_deductions, total_deductions, net_salary, employees(employee_number, first_name, last_name, departments!department_id(name))"
     )
     .eq("payroll_period_id", id)
     .order("created_at");
