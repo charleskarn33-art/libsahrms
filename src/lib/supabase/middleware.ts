@@ -14,6 +14,7 @@ const ROUTE_ROLES: Record<string, UserRole[]> = {
   payroll: ["super_admin", "hr_manager", "payroll_officer", "finance_manager", "managing_director"],
   loans: ["super_admin", "hr_manager", "payroll_officer", "finance_manager", "managing_director"],
   reports: ["super_admin", "hr_manager", "finance_manager", "managing_director", "auditor"],
+  benefits: ["super_admin", "hr_manager", "payroll_officer", "finance_manager", "managing_director", "auditor"],
   "audit-logs": ["super_admin", "auditor", "managing_director"],
   settings: ["super_admin", "hr_manager"],
   approvals: ["super_admin", "hr_manager", "finance_manager", "managing_director"],

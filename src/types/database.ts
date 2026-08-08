@@ -250,6 +250,76 @@ export interface TaxRemittance {
   updated_at: string;
 }
 
+export type BenefitCategory = "health" | "dental" | "vision" | "life" | "retirement" | "wellness" | "other";
+export type BenefitPlanStatus = "active" | "inactive";
+export type BenefitEnrollmentStatus = "active" | "pending" | "cancelled";
+export type DependentRelationship = "spouse" | "child" | "other";
+export type BenefitClaimStatus = "pending" | "approved" | "rejected";
+
+export interface BenefitProvider {
+  id: string;
+  company_id: string;
+  name: string;
+  contact_email: string | null;
+  contact_phone: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BenefitPlan {
+  id: string;
+  company_id: string;
+  provider_id: string | null;
+  name: string;
+  category: BenefitCategory;
+  description: string | null;
+  company_contribution: number;
+  employee_contribution: number;
+  status: BenefitPlanStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BenefitEnrollment {
+  id: string;
+  company_id: string;
+  employee_id: string;
+  benefit_plan_id: string;
+  enrollment_date: string;
+  coverage_start_date: string | null;
+  status: BenefitEnrollmentStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BenefitDependent {
+  id: string;
+  enrollment_id: string;
+  full_name: string;
+  relationship: DependentRelationship;
+  date_of_birth: string | null;
+  created_at: string;
+}
+
+export interface BenefitClaim {
+  id: string;
+  company_id: string;
+  employee_id: string;
+  benefit_plan_id: string;
+  claim_number: string;
+  description: string | null;
+  amount_claimed: number;
+  amount_approved: number | null;
+  status: BenefitClaimStatus;
+  submitted_at: string;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PublicHoliday {
   id: string;
   company_id: string;

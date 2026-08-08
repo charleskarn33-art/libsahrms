@@ -45,6 +45,7 @@ Migrations live in `supabase/migrations/` and must be applied **in order** — l
 | `0011_payments_processed_stage.sql` | Adds `'payments_processed'` as the sixth (final) stage of `payroll_approval_stage`, after `payslips_sent` |
 | `0012_public_holidays.sql` | Adds the company-scoped `public_holidays` table (backs the Public Holidays page and the leave calendar) |
 | `0013_tax_remittances.sql` | Adds `tax_remittances` — one row per payroll period recording that WHT + NASSCORP were actually paid to the government (payment date, receipt reference, status). Amounts aren't duplicated into it; they're derived live from `payroll_items`/`v_payroll_period_summary` — this table tracks the fact and evidence of remittance only |
+| `0014_benefits.sql` | Adds `benefit_providers`, `benefit_plans`, `benefit_enrollments`, `benefit_dependents`, and `benefit_claims`, with RLS matching the loans/leave pattern (self can see own, HR/payroll manage, management can view) |
 
 Then seed a starter company with sample departments, positions, and announcements:
 
@@ -134,6 +135,15 @@ LIBSA Consultancy provides HR/payroll as a service to multiple client companies,
 - `src/lib/report-pdf.tsx`: a reusable generic tabular PDF renderer (`@react-pdf/renderer`, landscape A4, header/body/optional bold totals row) shared by the NASSCORP and payments PDF routes — the payslip PDF (Phase 4) has its own richer layout and stays separate.
 - **Scope note:** export is CSV (opens fine in Excel) plus PDF for the two documents that are genuinely handed to a bank or a statutory authority (remittance, transfers). A dedicated Excel (`.xlsx`) exporter was deliberately left out — it would mean a new heavy dependency for a format CSV already covers with no loss of data.
 - The report PDF pipeline was smoke-tested the same way as the Phase 4 payslip PDF (rendered and rasterized to confirm layout), since `@react-pdf/renderer` runtime issues aren't caught by type-checking.
+
+**Benefits Administration** (previously an unmodeled Phase 6 placeholder, built out to match a reference design)
+- Schema (migration `0014`): `benefit_providers`, `benefit_plans` (per-plan annual company/employee contribution budget, not a per-employee rate), `benefit_enrollments`, `benefit_dependents` (tied to a specific enrollment), and `benefit_claims`.
+- `/benefits` (Overview): stat cards (total employees, enrolled employees, active plans, total annual company cost), a Benefits Plan Summary table, a Benefit Enrollment Overview donut (slice size = enrollment count per plan, legend % = participation rate against total headcount, not slice share), Recent Enrollments, a Claims Summary + Claims Trend chart for the current year, Quick Actions, and the same `Announcements` card used on the main dashboard.
+- `/benefits/plans`, `/benefits/enrollments` (+ dependents via a per-row dialog), `/benefits/claims` (file + approve/reject), `/benefits/providers`: full CRUD for each, all real data, no placeholders.
+- `/benefits/dependents`: read-only roll-up of everyone covered under an enrollment; `/benefits/settings` redirects to `/benefits/plans`, the same pattern `/payroll/settings` uses to redirect to `/settings`.
+- **Scope trim:** the reference design's sidebar and stat cards implied a couple of things not built: per-stat-card sparkline trends (no natural time-series backs a point-in-time count like "active plans", so these were dropped rather than faked) and an "Important Information" card with invented open-enrollment/policy-update content (replaced with the real, already-existing company `Announcements` feed instead of fabricated copy).
+- Closed a real gap while building this: `/benefits` wasn't in the middleware's per-route role table, so — like a couple of pre-existing pages (`/nasscorp`) — the sidebar hid it from plain `employee` users but a direct URL wouldn't have been blocked. Added `benefits` to `ROUTE_ROLES` in `src/lib/supabase/middleware.ts`, matching the roles the nav item already declared. RLS on the new tables was correct from the start regardless (an employee querying `benefit_enrollments`/`benefit_claims` only ever gets their own rows).
+- **Not yet verified against a live environment** — same constraint as everything else in this session; `tsc`/`build`/`lint` pass clean and the queries were reviewed by hand, but this hasn't been clicked through in a live browser.
 
 ## Roadmap — not yet built
 

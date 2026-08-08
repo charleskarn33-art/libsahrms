@@ -85,7 +85,21 @@ export const NAV_ITEMS: NavItem[] = [
     icon: HandCoins,
     roles: ["super_admin", "hr_manager", "payroll_officer", "finance_manager", "managing_director"],
   },
-  { label: "Benefits", href: "/benefits", icon: Gift, roles: ALL_STAFF },
+  {
+    label: "Benefits",
+    href: "/benefits",
+    icon: Gift,
+    roles: ALL_STAFF,
+    children: [
+      { label: "Benefits Overview", href: "/benefits" },
+      { label: "Benefit Plans", href: "/benefits/plans" },
+      { label: "Enrollments", href: "/benefits/enrollments" },
+      { label: "Dependents", href: "/benefits/dependents" },
+      { label: "Claims Management", href: "/benefits/claims" },
+      { label: "Benefit Providers", href: "/benefits/providers" },
+      { label: "Benefit Settings", href: "/benefits/settings" },
+    ],
+  },
   {
     label: "Tax & NASSCORP",
     href: "/nasscorp",
