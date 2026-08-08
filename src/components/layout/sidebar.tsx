@@ -9,10 +9,20 @@ import { NAV_ITEMS, NAV_ITEMS_ADMIN, type NavItem } from "@/components/layout/na
 import { CompanySwitcher } from "@/components/layout/company-switcher";
 import type { MyCompanyRow, UserRole } from "@/types/database";
 
-function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
+function NavBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[11px] font-semibold text-white">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
+function NavLink({ item, pathname, badgeCounts }: { item: NavItem; pathname: string; badgeCounts: Record<string, number> }) {
   const [open, setOpen] = useState(pathname.startsWith(item.href));
   const active = pathname === item.href || pathname.startsWith(item.href + "/");
   const Icon = item.icon;
+  const count = item.badgeKey ? badgeCounts[item.badgeKey] ?? 0 : 0;
 
   if (item.children?.length) {
     return (
@@ -36,7 +46,7 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
               const childActive = pathname === child.href;
               return (
                 <Link
-                  key={child.href}
+                  key={child.label}
                   href={child.href}
                   className={cn(
                     "rounded-lg px-3 py-2 text-sm transition-colors",
@@ -57,12 +67,15 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
     <Link
       href={item.href}
       className={cn(
-        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+        "flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
         active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
       )}
     >
-      <Icon className="h-[18px] w-[18px]" />
-      {item.label}
+      <span className="flex items-center gap-3">
+        <Icon className="h-[18px] w-[18px]" />
+        {item.label}
+      </span>
+      <NavBadge count={count} />
     </Link>
   );
 }
@@ -71,10 +84,12 @@ export function Sidebar({
   role,
   currentCompany,
   companies,
+  badgeCounts = {},
 }: {
   role: UserRole;
   currentCompany: MyCompanyRow | null;
   companies: MyCompanyRow[];
+  badgeCounts?: Record<string, number>;
 }) {
   const pathname = usePathname();
   const visible = (items: NavItem[]) => items.filter((item) => !item.roles || item.roles.includes(role));
@@ -99,11 +114,11 @@ export function Sidebar({
 
       <nav className="flex-1 space-y-1 overflow-y-auto scrollbar-thin px-3 py-4">
         {visible(NAV_ITEMS).map((item) => (
-          <NavLink key={item.href} item={item} pathname={pathname} />
+          <NavLink key={item.href} item={item} pathname={pathname} badgeCounts={badgeCounts} />
         ))}
         <div className="my-3 h-px bg-border" />
         {visible(NAV_ITEMS_ADMIN).map((item) => (
-          <NavLink key={item.href} item={item} pathname={pathname} />
+          <NavLink key={item.href} item={item} pathname={pathname} badgeCounts={badgeCounts} />
         ))}
       </nav>
 

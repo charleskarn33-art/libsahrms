@@ -8,13 +8,14 @@ export type UserRole =
   | "auditor";
 
 export type EmploymentType = "full_time" | "part_time" | "contract" | "intern" | "temporary";
-export type EmploymentStatus = "active" | "on_leave" | "suspended" | "terminated" | "resigned" | "retired";
+export type EmploymentStatus = "active" | "probation" | "on_leave" | "suspended" | "terminated" | "resigned" | "retired";
 export type MaritalStatus = "single" | "married" | "divorced" | "widowed";
 export type Gender = "male" | "female" | "other";
 export type TaxStatus = "single" | "married" | "exempt";
 
 export type AttendanceStatus = "present" | "late" | "early_leave" | "absent" | "holiday" | "weekend" | "on_leave";
 export type LoanStatus = "pending" | "approved" | "active" | "completed" | "rejected" | "cancelled";
+export type PayslipDeliveryStatus = "queued" | "sent" | "delivered" | "opened" | "failed";
 
 export type LeaveType =
   | "annual"
@@ -33,7 +34,8 @@ export type PayrollApprovalStage =
   | "finance_review"
   | "director_approval"
   | "payroll_locked"
-  | "payslips_sent";
+  | "payslips_sent"
+  | "payments_processed";
 
 export interface Profile {
   id: string;
@@ -43,6 +45,7 @@ export interface Profile {
   avatar_url: string | null;
   is_active: boolean;
   two_factor_enabled: boolean;
+  default_company_id: string | null;
   last_login_at: string | null;
   created_at: string;
   updated_at: string;
@@ -185,6 +188,9 @@ export interface EmployeeDirectoryRow {
   department_name: string | null;
   position_title: string | null;
   supervisor_name: string | null;
+  company_id: string;
+  gender: Gender | null;
+  tin: string | null;
 }
 
 export interface PayrollPeriod {
@@ -226,6 +232,99 @@ export interface LeaveRequest {
   days_requested: number;
   reason: string | null;
   status: LeaveRequestStatus;
+  created_at: string;
+}
+
+export type TaxRemittanceStatus = "pending" | "paid";
+
+export interface TaxRemittance {
+  id: string;
+  company_id: string;
+  payroll_period_id: string;
+  status: TaxRemittanceStatus;
+  payment_date: string;
+  receipt_reference: string | null;
+  notes: string | null;
+  recorded_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type BenefitCategory = "health" | "dental" | "vision" | "life" | "retirement" | "wellness" | "other";
+export type BenefitPlanStatus = "active" | "inactive";
+export type BenefitEnrollmentStatus = "active" | "pending" | "cancelled";
+export type DependentRelationship = "spouse" | "child" | "other";
+export type BenefitClaimStatus = "pending" | "approved" | "rejected";
+
+export interface BenefitProvider {
+  id: string;
+  company_id: string;
+  name: string;
+  contact_email: string | null;
+  contact_phone: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BenefitPlan {
+  id: string;
+  company_id: string;
+  provider_id: string | null;
+  name: string;
+  category: BenefitCategory;
+  description: string | null;
+  company_contribution: number;
+  employee_contribution: number;
+  status: BenefitPlanStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BenefitEnrollment {
+  id: string;
+  company_id: string;
+  employee_id: string;
+  benefit_plan_id: string;
+  enrollment_date: string;
+  coverage_start_date: string | null;
+  status: BenefitEnrollmentStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BenefitDependent {
+  id: string;
+  enrollment_id: string;
+  full_name: string;
+  relationship: DependentRelationship;
+  date_of_birth: string | null;
+  created_at: string;
+}
+
+export interface BenefitClaim {
+  id: string;
+  company_id: string;
+  employee_id: string;
+  benefit_plan_id: string;
+  claim_number: string;
+  description: string | null;
+  amount_claimed: number;
+  amount_approved: number | null;
+  status: BenefitClaimStatus;
+  submitted_at: string;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PublicHoliday {
+  id: string;
+  company_id: string;
+  name: string;
+  holiday_date: string;
   created_at: string;
 }
 

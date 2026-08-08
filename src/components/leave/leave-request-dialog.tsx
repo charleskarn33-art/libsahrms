@@ -17,10 +17,21 @@ import { requestLeave } from "@/actions/leave";
 
 const LEAVE_TYPES = ["annual", "sick", "compassionate", "maternity", "paternity", "emergency", "unpaid"];
 
-export function LeaveRequestDialog() {
+export function LeaveRequestDialog({
+  open: controlledOpen,
+  onOpenChange,
+  hideTrigger = false,
+}: {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
+} = {}) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = onOpenChange ?? setUncontrolledOpen;
 
   const {
     register,
@@ -48,11 +59,13 @@ export function LeaveRequestDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="gradient">
-          <Plus className="h-4 w-4" /> Request Leave
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="gradient">
+            <Plus className="h-4 w-4" /> New Leave Request
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>New Leave Request</DialogTitle>

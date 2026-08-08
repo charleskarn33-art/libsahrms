@@ -38,6 +38,7 @@ export async function createPayrollPeriod(input: unknown): Promise<ActionResult<
 
   await logAudit({ action: "payroll_period_created", entityType: "payroll_period", entityId: data.id, companyId });
   revalidatePath("/payroll/periods");
+  revalidatePath("/payroll");
   return { success: true, data: { id: data.id } };
 }
 
@@ -66,6 +67,7 @@ export async function generatePayroll(periodId: string): Promise<ActionResult> {
 
   await logAudit({ action: "payroll_generated", entityType: "payroll_period", entityId: periodId, companyId: period?.company_id });
   revalidatePath("/payroll/periods");
+  revalidatePath("/payroll");
   revalidatePath("/dashboard");
   return { success: true };
 }
@@ -93,6 +95,7 @@ export async function financeReview(periodId: string, decision: "approved" | "re
 
   await logAudit({ action: `payroll_finance_${decision}`, entityType: "payroll_period", entityId: periodId, companyId: period?.company_id });
   revalidatePath("/payroll/periods");
+  revalidatePath("/payroll");
   revalidatePath("/approvals");
   revalidatePath("/dashboard");
   return { success: true };
@@ -121,6 +124,7 @@ export async function directorApproval(periodId: string, decision: "approved" | 
 
   await logAudit({ action: `payroll_director_${decision}`, entityType: "payroll_period", entityId: periodId, companyId: period?.company_id });
   revalidatePath("/payroll/periods");
+  revalidatePath("/payroll");
   revalidatePath("/approvals");
   revalidatePath("/dashboard");
   return { success: true };
@@ -143,6 +147,7 @@ export async function lockPayroll(periodId: string): Promise<ActionResult> {
 
   await logAudit({ action: "payroll_locked", entityType: "payroll_period", entityId: periodId, companyId: period?.company_id });
   revalidatePath("/payroll/periods");
+  revalidatePath("/payroll");
   revalidatePath("/dashboard");
   return { success: true };
 }
@@ -169,5 +174,6 @@ export async function unlockPayroll(periodId: string): Promise<ActionResult> {
 
   await logAudit({ action: "payroll_unlocked", entityType: "payroll_period", entityId: periodId, companyId: period?.company_id });
   revalidatePath("/payroll/periods");
+  revalidatePath("/payroll");
   return { success: true };
 }

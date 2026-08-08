@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CompanySettingsForm } from "@/components/settings/company-settings-form";
 import { InviteMemberDialog } from "@/components/companies/invite-member-dialog";
 import { RemoveMemberButton } from "@/components/companies/remove-member-button";
+import { SetDefaultButton } from "@/components/companies/set-default-button";
 import { ROLE_LABELS } from "@/components/layout/nav-config";
 import { initials } from "@/lib/utils";
 import type { UserRole } from "@/types/database";
@@ -24,7 +25,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
 
   const { data: memberships } = await supabase
     .from("company_memberships")
-    .select("id, role, profile_id, profiles(full_name, email, avatar_url)")
+    .select("id, role, profile_id, profiles(full_name, email, avatar_url, default_company_id)")
     .eq("company_id", id)
     .order("created_at");
 
@@ -74,7 +75,12 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
               <p className="py-6 text-center text-sm text-muted-foreground">No staff assigned yet.</p>
             )}
             {(memberships ?? []).map((m) => {
-              const p = m.profiles as unknown as { full_name: string; email: string; avatar_url: string | null } | null;
+              const p = m.profiles as unknown as {
+                full_name: string;
+                email: string;
+                avatar_url: string | null;
+                default_company_id: string | null;
+              } | null;
               return (
                 <div key={m.id} className="flex items-center justify-between rounded-xl border border-border px-3 py-2.5">
                   <div className="flex items-center gap-3">
@@ -89,6 +95,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{ROLE_LABELS[m.role as UserRole]}</Badge>
+                    <SetDefaultButton companyId={id} profileId={m.profile_id} isDefault={p?.default_company_id === id} />
                     <RemoveMemberButton companyId={id} profileId={m.profile_id} />
                   </div>
                 </div>

@@ -2,11 +2,11 @@ import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
   Users,
-  Building2,
   Clock,
   CalendarDays,
   Wallet,
   HandCoins,
+  Gift,
   BarChart3,
   CheckSquare,
   UserCircle,
@@ -24,7 +24,9 @@ export interface NavItem {
   href: string;
   icon: LucideIcon;
   roles?: UserRole[];
-  children?: { label: string; href: string }[];
+  /** Key into the badge counts map passed to Sidebar, e.g. "approvals" */
+  badgeKey?: string;
+  children?: { label: string; href: string; badgeKey?: string }[];
 }
 
 const ALL_STAFF: UserRole[] = [
@@ -38,16 +40,39 @@ const ALL_STAFF: UserRole[] = [
 
 export const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Employees", href: "/employees", icon: Users, roles: ALL_STAFF },
-  { label: "Departments", href: "/departments", icon: Building2, roles: ALL_STAFF },
+  {
+    label: "Employees",
+    href: "/employees",
+    icon: Users,
+    roles: ALL_STAFF,
+    children: [
+      { label: "Employee Database", href: "/employees" },
+      { label: "Add Employee", href: "/employees/new" },
+      { label: "Departments", href: "/departments" },
+      { label: "Positions", href: "/departments" },
+      { label: "Org Chart", href: "/org-chart" },
+    ],
+  },
   { label: "Attendance", href: "/attendance", icon: Clock },
-  { label: "Leave Management", href: "/leave", icon: CalendarDays },
+  {
+    label: "Leave Management",
+    href: "/leave",
+    icon: CalendarDays,
+    children: [
+      { label: "Leave Dashboard", href: "/leave" },
+      { label: "Leave Calendar", href: "/leave/calendar" },
+      { label: "Leave Balance", href: "/leave/balance" },
+      { label: "Public Holidays", href: "/leave/holidays" },
+      { label: "Leave Settings", href: "/leave/settings" },
+    ],
+  },
   {
     label: "Payroll",
     href: "/payroll",
     icon: Wallet,
     roles: ["super_admin", "hr_manager", "payroll_officer", "finance_manager", "managing_director"],
     children: [
+      { label: "Payroll Dashboard", href: "/payroll" },
       { label: "Payroll Periods", href: "/payroll/periods" },
       { label: "Approve Payroll", href: "/approvals" },
       { label: "Payslips", href: "/payroll/payslips" },
@@ -60,18 +85,53 @@ export const NAV_ITEMS: NavItem[] = [
     icon: HandCoins,
     roles: ["super_admin", "hr_manager", "payroll_officer", "finance_manager", "managing_director"],
   },
-  { label: "Tax & NASSCORP", href: "/nasscorp", icon: Landmark, roles: ALL_STAFF },
+  {
+    label: "Benefits",
+    href: "/benefits",
+    icon: Gift,
+    roles: ALL_STAFF,
+    children: [
+      { label: "Benefits Overview", href: "/benefits" },
+      { label: "Benefit Plans", href: "/benefits/plans" },
+      { label: "Enrollments", href: "/benefits/enrollments" },
+      { label: "Dependents", href: "/benefits/dependents" },
+      { label: "Claims Management", href: "/benefits/claims" },
+      { label: "Benefit Providers", href: "/benefits/providers" },
+      { label: "Benefit Settings", href: "/benefits/settings" },
+    ],
+  },
+  {
+    label: "Tax & NASSCORP",
+    href: "/nasscorp",
+    icon: Landmark,
+    roles: ALL_STAFF,
+    children: [
+      { label: "Overview", href: "/nasscorp" },
+      { label: "Tax Settings", href: "/settings" },
+    ],
+  },
   {
     label: "Reports",
     href: "/reports",
     icon: BarChart3,
     roles: ["super_admin", "hr_manager", "finance_manager", "managing_director", "auditor"],
+    children: [
+      { label: "Reports Home", href: "/reports" },
+      { label: "Payroll Summary", href: "/reports/payroll" },
+      { label: "Department Cost", href: "/reports/departments" },
+      { label: "Tax & NASSCORP", href: "/nasscorp" },
+      { label: "Bank & Orange Money", href: "/reports/payments" },
+      { label: "Attendance", href: "/reports/attendance" },
+      { label: "Leave", href: "/reports/leave" },
+      { label: "Loans & Advances", href: "/reports/loans" },
+    ],
   },
   {
     label: "Approvals",
     href: "/approvals",
     icon: CheckSquare,
     roles: ["super_admin", "hr_manager", "finance_manager", "managing_director"],
+    badgeKey: "approvals",
   },
   { label: "Self Service", href: "/portal", icon: UserCircle },
   { label: "Notifications", href: "/notifications", icon: Bell },

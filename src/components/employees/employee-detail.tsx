@@ -1,12 +1,13 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency, formatDate, initials } from "@/lib/utils";
+import { EmployeePhotoViewer } from "@/components/employees/employee-photo-viewer";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Employee, EmploymentStatus } from "@/types/database";
 
 const STATUS_VARIANT: Record<EmploymentStatus, "success" | "warning" | "danger" | "outline"> = {
   active: "success",
+  probation: "warning",
   on_leave: "warning",
   suspended: "warning",
   terminated: "danger",
@@ -38,10 +39,7 @@ export function EmployeeDetail({
     <div className="space-y-6">
       <Card>
         <CardContent className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center">
-          <Avatar className="h-20 w-20 text-xl">
-            <AvatarImage src={employee.photo_url ?? undefined} alt={fullName} />
-            <AvatarFallback>{initials(fullName)}</AvatarFallback>
-          </Avatar>
+          <EmployeePhotoViewer photoUrl={employee.photo_url} name={fullName} />
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3">
               <h2 className="text-xl font-bold">{fullName}</h2>

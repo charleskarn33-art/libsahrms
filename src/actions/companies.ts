@@ -85,6 +85,16 @@ export async function inviteMember(companyId: string, email: string, role: UserR
   return { success: true };
 }
 
+export async function setDefaultCompany(profileId: string, companyId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_default_company", { p_profile_id: profileId, p_company_id: companyId });
+  if (error) return { success: false, error: error.message };
+
+  await logAudit({ action: "default_company_set", entityType: "profile", entityId: profileId, companyId });
+  revalidatePath("/companies");
+  return { success: true };
+}
+
 export async function removeMember(companyId: string, profileId: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase
