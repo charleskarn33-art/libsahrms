@@ -46,6 +46,7 @@ export default async function SettingsPage() {
                 employee_nasscorp_rate: company.employee_nasscorp_rate,
                 employer_nasscorp_rate: company.employer_nasscorp_rate,
                 currency: company.currency,
+                logo_url: company.logo_url ?? "",
               }}
             />
           )}

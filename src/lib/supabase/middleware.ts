@@ -4,6 +4,8 @@ import { CURRENT_COMPANY_COOKIE } from "@/lib/constants";
 import type { UserRole } from "@/types/database";
 
 const PUBLIC_PATHS = ["/login", "/forgot-password", "/reset-password", "/auth/callback"];
+// Reachable regardless of auth state — never redirected to /login or /dashboard.
+const ALWAYS_OPEN_PATHS = ["/verify"];
 const COMPANY_EXEMPT_PATHS = ["/companies", "/settings/users"];
 
 // Roles permitted per top-level route segment, checked against the caller's
@@ -45,6 +47,10 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
+  if (ALWAYS_OPEN_PATHS.some((p) => path.startsWith(p))) {
+    return supabaseResponse;
+  }
+
   const isPublic = PUBLIC_PATHS.some((p) => path.startsWith(p));
 
   if (!user && !isPublic) {

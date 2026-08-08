@@ -60,6 +60,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
                 employee_nasscorp_rate: company.employee_nasscorp_rate,
                 employer_nasscorp_rate: company.employer_nasscorp_rate,
                 currency: company.currency,
+                logo_url: company.logo_url ?? "",
               }}
             />
           </CardContent>

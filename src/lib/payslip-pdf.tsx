@@ -1,5 +1,6 @@
 import "server-only";
 import { Document, Page, View, Text, Image, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
+import QRCode from "qrcode";
 
 const AMOUNT_COL_WIDTH = 72;
 
@@ -48,7 +49,20 @@ const styles = StyleSheet.create({
   nasscorpBox: { marginTop: 14 },
   nasscorpTitle: { fontSize: 9.5, fontFamily: "Times-Bold", marginBottom: 3 },
 
-  footerBar: { minHeight: 26, borderTopWidth: 1.3, borderColor: "#000000" },
+  footerBar: {
+    minHeight: 56,
+    borderTopWidth: 1.3,
+    borderColor: "#000000",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  footerLeft: { fontSize: 7.5, color: "#444444" },
+  footerQrBlock: { alignItems: "center" },
+  footerQrImg: { width: 40, height: 40 },
+  footerQrLabel: { fontSize: 6.5, color: "#444444", marginTop: 2 },
 });
 
 export interface PayslipPdfData {
@@ -97,6 +111,7 @@ export interface PayslipPdfData {
   employerNasscorp: number;
   netSalary: number;
   generatedAt: string;
+  verificationUrl: string;
 }
 
 function money(amount: number) {
@@ -157,7 +172,7 @@ function InfoRow({ label, value, labelWidth, bold }: { label: string; value: str
   );
 }
 
-function PayslipDocument({ data }: { data: PayslipPdfData }) {
+function PayslipDocument({ data, qrDataUrl }: { data: PayslipPdfData; qrDataUrl: string | null }) {
   const { company, employee, period, earnings, deductions } = data;
   const isOrangeMoney = employee.paymentMethod === "orange_money";
 
@@ -261,7 +276,16 @@ function PayslipDocument({ data }: { data: PayslipPdfData }) {
             </View>
           </View>
 
-          <View style={styles.footerBar} />
+          <View style={styles.footerBar}>
+            <Text style={styles.footerLeft}>Generated {data.generatedAt} · {data.payslipNumber}</Text>
+            {qrDataUrl && (
+              <View style={styles.footerQrBlock}>
+                {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer's Image has no alt prop */}
+                <Image src={qrDataUrl} style={styles.footerQrImg} />
+                <Text style={styles.footerQrLabel}>Scan to verify</Text>
+              </View>
+            )}
+          </View>
         </View>
       </Page>
     </Document>
@@ -269,5 +293,11 @@ function PayslipDocument({ data }: { data: PayslipPdfData }) {
 }
 
 export async function renderPayslipPdf(data: PayslipPdfData): Promise<Buffer> {
-  return renderToBuffer(<PayslipDocument data={data} />);
+  let qrDataUrl: string | null = null;
+  try {
+    qrDataUrl = await QRCode.toDataURL(data.verificationUrl, { margin: 1, width: 160 });
+  } catch {
+    qrDataUrl = null;
+  }
+  return renderToBuffer(<PayslipDocument data={data} qrDataUrl={qrDataUrl} />);
 }

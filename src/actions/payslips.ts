@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
-import { buildPayslipNumber, buildQrCodeData } from "@/lib/payslip";
+import { buildPayslipNumber, buildVerificationUrl } from "@/lib/payslip";
 import { renderPayslipPdf, type PayslipPdfData } from "@/lib/payslip-pdf";
 import { payslipEmailSubject, payslipEmailHtml } from "@/lib/email-templates";
 import { sendMail, getConfiguredMailProvider } from "@/lib/mailer";
@@ -95,7 +95,8 @@ export async function generatePayslips(periodId: string): Promise<ActionResult<{
     }
 
     const payslipNumber = buildPayslipNumber(company.slug, period.period_start, emp.employee_number);
-    const qrCodeData = buildQrCodeData(payslipNumber, company.name);
+    const payslipId = crypto.randomUUID();
+    const verificationUrl = buildVerificationUrl(payslipId);
     const fullName = `${emp.first_name} ${emp.last_name}`;
 
     const pdfData: PayslipPdfData = {
@@ -142,6 +143,7 @@ export async function generatePayslips(periodId: string): Promise<ActionResult<{
       employerNasscorp: Number(rawItem.employer_nasscorp),
       netSalary: Number(rawItem.net_salary),
       generatedAt: formatDate(new Date().toISOString()),
+      verificationUrl,
     };
 
     let pdfBuffer: Buffer;
@@ -165,13 +167,14 @@ export async function generatePayslips(periodId: string): Promise<ActionResult<{
     const { data: payslip, error: insertError } = await supabase
       .from("payslips")
       .insert({
+        id: payslipId,
         payslip_number: payslipNumber,
         payroll_item_id: rawItem.id,
         employee_id: rawItem.employee_id,
         payroll_period_id: periodId,
         company_id: period.company_id,
         storage_path: storagePath,
-        qr_code_data: qrCodeData,
+        qr_code_data: verificationUrl,
       })
       .select("id")
       .single();
