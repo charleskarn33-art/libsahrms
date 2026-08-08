@@ -1,90 +1,79 @@
 import "server-only";
 import { Document, Page, View, Text, Image, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
-import { qrCodeDataUri } from "@/lib/payslip";
 
-const COLORS = {
-  primary: "#0057FF",
-  secondary: "#00B894",
-  danger: "#E53935",
-  text: "#0F172A",
-  muted: "#64748B",
-  border: "#E2E8F0",
-  bg: "#F8FAFC",
-};
+const AMOUNT_COL_WIDTH = 72;
 
 const styles = StyleSheet.create({
-  page: { padding: 36, fontSize: 9, color: COLORS.text, fontFamily: "Helvetica" },
-  watermark: {
-    position: "absolute",
-    top: 320,
-    left: 90,
-    fontSize: 64,
-    color: "#EEF3FF",
-    transform: "rotate(-35deg)",
-    zIndex: -1,
-  },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 },
-  companyName: { fontSize: 16, fontWeight: 700, color: COLORS.primary },
-  companySub: { fontSize: 8, color: COLORS.muted, marginTop: 2 },
-  payslipTitle: { fontSize: 14, fontWeight: 700, textAlign: "right" },
-  payslipNumber: { fontSize: 8, color: COLORS.muted, textAlign: "right", marginTop: 2 },
-  infoGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    backgroundColor: COLORS.bg,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  infoCell: { width: "33%", marginBottom: 8 },
-  infoLabel: { fontSize: 7, color: COLORS.muted, textTransform: "uppercase", letterSpacing: 0.5 },
-  infoValue: { fontSize: 9.5, fontWeight: 700, marginTop: 2 },
-  sectionTitle: { fontSize: 10, fontWeight: 700, marginBottom: 6, marginTop: 4 },
-  table: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 6, overflow: "hidden", marginBottom: 14 },
-  tableRow: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingVertical: 6, paddingHorizontal: 10 },
-  tableRowLast: { flexDirection: "row", paddingVertical: 6, paddingHorizontal: 10, backgroundColor: COLORS.bg },
-  tableLabel: { flex: 1, color: COLORS.muted },
-  tableValue: { width: 90, textAlign: "right", fontWeight: 700 },
-  twoCol: { flexDirection: "row", gap: 14 },
-  col: { flex: 1 },
-  netBox: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    padding: 14,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  netLabel: { color: "#FFFFFF", fontSize: 10 },
-  netValue: { color: "#FFFFFF", fontSize: 18, fontWeight: 700 },
-  footerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 24 },
-  signatureLine: { width: 160, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 4, fontSize: 8, color: COLORS.muted },
-  qrBlock: { alignItems: "center" },
-  qrCaption: { fontSize: 6, color: COLORS.muted, marginTop: 4, width: 90, textAlign: "center" },
-  disclaimer: { fontSize: 7, color: COLORS.muted, marginTop: 18, textAlign: "center" },
+  page: { padding: 26, fontSize: 9.5, fontFamily: "Times-Roman", color: "#000000" },
+  outerBox: { borderWidth: 1.3, borderColor: "#000000" },
+
+  logoSection: { minHeight: 56, justifyContent: "center", paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1.3, borderColor: "#000000" },
+  companyLogoImg: { height: 34, objectFit: "contain" },
+  companyLogoText: { fontSize: 22, fontFamily: "Times-Bold" },
+
+  titleBar: { paddingHorizontal: 14, paddingVertical: 6, borderBottomWidth: 1.3, borderColor: "#000000" },
+  titleText: { fontSize: 11, fontFamily: "Times-Bold" },
+
+  infoGrid: { flexDirection: "row", borderBottomWidth: 1.3, borderColor: "#000000" },
+  infoCol: { flex: 1, paddingHorizontal: 14, paddingVertical: 10 },
+  infoRow: { flexDirection: "row", marginBottom: 2 },
+  infoLabelLeft: { width: 128, fontSize: 9.5 },
+  infoValue: { fontSize: 9.5, flex: 1 },
+  bold: { fontFamily: "Times-Bold" },
+
+  tableSection: { flexDirection: "row" },
+  earningsHalf: { flex: 1, borderRightWidth: 1.3, borderColor: "#000000", paddingHorizontal: 14, paddingVertical: 10 },
+  deductionsHalf: { flex: 1, paddingHorizontal: 14, paddingVertical: 10 },
+
+  headerRow: { flexDirection: "row", borderBottomWidth: 1, borderColor: "#000000", paddingBottom: 3, marginBottom: 5 },
+  headerLabel: { flex: 1, fontSize: 9.5, fontFamily: "Times-Bold" },
+  headerAmount: { width: AMOUNT_COL_WIDTH, fontSize: 9.5, fontFamily: "Times-Bold", textAlign: "right" },
+
+  lineRow: { flexDirection: "row", paddingVertical: 2.5 },
+  lineLabel: { flex: 1, fontSize: 9.5 },
+  lineAmount: { width: AMOUNT_COL_WIDTH, fontSize: 9.5, textAlign: "right" },
+
+  totalRow: { flexDirection: "row", alignItems: "flex-end" },
+  totalLabel: { flex: 1, fontSize: 9.5 },
+  totalAmountBlock: { width: AMOUNT_COL_WIDTH },
+  totalRule: { borderTopWidth: 1, borderColor: "#000000", marginBottom: 2 },
+  totalAmount: { fontSize: 9.5, fontFamily: "Times-Bold", textAlign: "right" },
+  doubleRule: { marginTop: 2 },
+  ruleLine: { borderTopWidth: 0.8, borderColor: "#000000", marginTop: 1.5 },
+
+  netPayRow: { flexDirection: "row", marginTop: 14 },
+  netPayLabel: { flex: 1, fontSize: 10.5, fontFamily: "Times-Bold" },
+  netPayAmount: { width: AMOUNT_COL_WIDTH, fontSize: 10.5, fontFamily: "Times-Bold", textAlign: "right" },
+
+  nasscorpBox: { marginTop: 14 },
+  nasscorpTitle: { fontSize: 9.5, fontFamily: "Times-Bold", marginBottom: 3 },
+
+  footerBar: { minHeight: 26, borderTopWidth: 1.3, borderColor: "#000000" },
 });
 
 export interface PayslipPdfData {
   payslipNumber: string;
   company: {
     name: string;
-    address: string | null;
     logoUrl: string | null;
+    employeeNasscorpRate: number;
+    employerNasscorpRate: number;
   };
   employee: {
     fullName: string;
     employeeNumber: string;
-    department: string | null;
-    position: string | null;
+    employmentType: string;
+    jobTitle: string | null;
+    dateHired: string;
     bankName: string | null;
     bankAccountNumber: string | null;
     orangeMoneyNumber: string | null;
     paymentMethod: string;
+    nasscorpNumber: string | null;
+    tin: string | null;
   };
   period: {
     label: string;
-    paymentDate: string | null;
   };
   currency: string;
   earnings: {
@@ -107,147 +96,178 @@ export interface PayslipPdfData {
   };
   employerNasscorp: number;
   netSalary: number;
-  qrCodeData: string;
   generatedAt: string;
 }
 
-function money(amount: number, currency: string) {
-  return `${currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+function money(amount: number) {
+  return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function PayslipDocument({ data, qrDataUri }: { data: PayslipPdfData; qrDataUri: string }) {
-  const { company, employee, period, currency, earnings, deductions } = data;
+function employmentCategoryLabel(type: string) {
+  switch (type) {
+    case "contract":
+      return "Contractor";
+    case "intern":
+      return "Intern";
+    case "temporary":
+      return "Temporary Staff";
+    default:
+      return "Employee";
+  }
+}
+
+function formatHireDate(dateStr: string) {
+  const d = new Date(dateStr);
+  const day = d.getDate();
+  const month = d.toLocaleString("en-US", { month: "short" });
+  return `${day}-${month}-${d.getFullYear()}`;
+}
+
+function LineItem({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
+  return (
+    <View style={styles.lineRow}>
+      <Text style={bold ? [styles.lineLabel, styles.bold] : styles.lineLabel}>{label}</Text>
+      <Text style={bold ? [styles.lineAmount, styles.bold] : styles.lineAmount}>{money(value)}</Text>
+    </View>
+  );
+}
+
+function TotalLine({ label, value }: { label: string; value: number }) {
+  return (
+    <View style={styles.totalRow}>
+      <Text style={styles.totalLabel}>{label}</Text>
+      <View style={styles.totalAmountBlock}>
+        <View style={styles.totalRule} />
+        <Text style={styles.totalAmount}>{money(value)}</Text>
+        <View style={styles.doubleRule}>
+          <View style={styles.ruleLine} />
+          <View style={styles.ruleLine} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function InfoRow({ label, value, labelWidth, bold }: { label: string; value: string; labelWidth: number; bold?: boolean }) {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={[styles.infoLabelLeft, { width: labelWidth }]}>{label}</Text>
+      <Text style={bold ? [styles.infoValue, styles.bold] : styles.infoValue}>{value}</Text>
+    </View>
+  );
+}
+
+function PayslipDocument({ data }: { data: PayslipPdfData }) {
+  const { company, employee, period, earnings, deductions } = data;
+  const isOrangeMoney = employee.paymentMethod === "orange_money";
+
+  const earningLines: { label: string; value: number }[] = [{ label: "Basic pay", value: earnings.basicSalary }];
+  if (earnings.housingAllowance) earningLines.push({ label: "Housing Allowance", value: earnings.housingAllowance });
+  if (earnings.transportAllowance) earningLines.push({ label: "Transport Allowance", value: earnings.transportAllowance });
+  if (earnings.relocationAllowance) earningLines.push({ label: "Relocation Allowance", value: earnings.relocationAllowance });
+  if (earnings.bonus) earningLines.push({ label: "Bonus", value: earnings.bonus });
+  if (earnings.commission) earningLines.push({ label: "Commission", value: earnings.commission });
+  if (earnings.overtimePay) earningLines.push({ label: "Overtime", value: earnings.overtimePay });
+
+  const deductionLines: { label: string; value: number }[] = [
+    { label: "Withholding Tax", value: deductions.incomeTax },
+    { label: `NASSCORP Contribution -${company.employeeNasscorpRate}%`, value: deductions.employeeNasscorp },
+  ];
+  if (deductions.loanDeductions) deductionLines.push({ label: "Loan Deductions", value: deductions.loanDeductions });
+  if (deductions.otherDeductions) deductionLines.push({ label: "Other Deductions", value: deductions.otherDeductions });
+  if (deductions.orangeMoneyFee) deductionLines.push({ label: "Orange Money Fee", value: deductions.orangeMoneyFee });
+
+  const maxLines = Math.max(earningLines.length, deductionLines.length);
+  const spacerHeight = Math.max(20, 96 - maxLines * 14);
+
+  const totalNasscorp = deductions.employeeNasscorp + data.employerNasscorp;
 
   return (
     <Document title={`Payslip ${data.payslipNumber}`}>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.watermark}>{company.name.toUpperCase()}</Text>
-
-        <View style={styles.headerRow}>
-          <View>
+        <View style={styles.outerBox}>
+          <View style={styles.logoSection}>
             {company.logoUrl ? (
               // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer's Image has no alt prop; this isn't next/image
-              <Image src={company.logoUrl} style={{ width: 100, height: 32, objectFit: "contain", marginBottom: 6 }} />
+              <Image src={company.logoUrl} style={styles.companyLogoImg} />
             ) : (
-              <Text style={styles.companyName}>{company.name}</Text>
+              <Text style={styles.companyLogoText}>{company.name}</Text>
             )}
-            {company.address && <Text style={styles.companySub}>{company.address}</Text>}
           </View>
-          <View>
-            <Text style={styles.payslipTitle}>PAYSLIP</Text>
-            <Text style={styles.payslipNumber}>{data.payslipNumber}</Text>
-            <Text style={styles.payslipNumber}>{period.label}</Text>
-          </View>
-        </View>
 
-        <View style={styles.infoGrid}>
-          <View style={styles.infoCell}>
-            <Text style={styles.infoLabel}>Employee Name</Text>
-            <Text style={styles.infoValue}>{employee.fullName}</Text>
+          <View style={styles.titleBar}>
+            <Text style={styles.titleText}>END OF MONTH PAYSLIP</Text>
           </View>
-          <View style={styles.infoCell}>
-            <Text style={styles.infoLabel}>Employee Number</Text>
-            <Text style={styles.infoValue}>{employee.employeeNumber}</Text>
-          </View>
-          <View style={styles.infoCell}>
-            <Text style={styles.infoLabel}>Department</Text>
-            <Text style={styles.infoValue}>{employee.department ?? "—"}</Text>
-          </View>
-          <View style={styles.infoCell}>
-            <Text style={styles.infoLabel}>Position</Text>
-            <Text style={styles.infoValue}>{employee.position ?? "—"}</Text>
-          </View>
-          <View style={styles.infoCell}>
-            <Text style={styles.infoLabel}>Payroll Month</Text>
-            <Text style={styles.infoValue}>{period.label}</Text>
-          </View>
-          <View style={styles.infoCell}>
-            <Text style={styles.infoLabel}>Payment Date</Text>
-            <Text style={styles.infoValue}>{period.paymentDate ?? "—"}</Text>
-          </View>
-        </View>
 
-        <View style={styles.twoCol}>
-          <View style={styles.col}>
-            <Text style={styles.sectionTitle}>Earnings</Text>
-            <View style={styles.table}>
-              <Row label="Basic Salary" value={money(earnings.basicSalary, currency)} />
-              <Row label="Housing Allowance" value={money(earnings.housingAllowance, currency)} />
-              <Row label="Transport Allowance" value={money(earnings.transportAllowance, currency)} />
-              <Row label="Relocation Allowance" value={money(earnings.relocationAllowance, currency)} />
-              <Row label="Bonus" value={money(earnings.bonus, currency)} />
-              <Row label="Commission" value={money(earnings.commission, currency)} />
-              <Row label="Overtime Pay" value={money(earnings.overtimePay, currency)} />
-              <Row label="Gross Salary" value={money(earnings.grossSalary, currency)} last />
+          <View style={styles.infoGrid}>
+            <View style={styles.infoCol}>
+              <InfoRow label="Emp. Category/Status" value={employmentCategoryLabel(employee.employmentType)} labelWidth={128} />
+              <InfoRow label="Employment ID No" value={employee.employeeNumber} labelWidth={128} />
+              <InfoRow label="Employee Name" value={employee.fullName} labelWidth={128} bold />
+              <InfoRow label="Job Title" value={employee.jobTitle ?? "—"} labelWidth={128} />
+              <InfoRow label="Date of Hire" value={formatHireDate(employee.dateHired)} labelWidth={128} />
+            </View>
+            <View style={styles.infoCol}>
+              <InfoRow label="Period:" value={period.label.toUpperCase()} labelWidth={92} />
+              {isOrangeMoney ? (
+                <>
+                  <InfoRow label="Payment Method" value="Orange Money" labelWidth={92} />
+                  <InfoRow label="Orange Money #" value={employee.orangeMoneyNumber ?? "—"} labelWidth={92} />
+                </>
+              ) : (
+                <>
+                  <InfoRow label="Bank" value={employee.bankName ?? "—"} labelWidth={92} />
+                  <InfoRow label="Bank Account" value={employee.bankAccountNumber ?? "—"} labelWidth={92} />
+                </>
+              )}
+              <InfoRow label="NASSCORP No." value={employee.nasscorpNumber ?? "—"} labelWidth={92} />
+              <InfoRow label="TIN" value={employee.tin ?? "—"} labelWidth={92} />
             </View>
           </View>
 
-          <View style={styles.col}>
-            <Text style={styles.sectionTitle}>Deductions</Text>
-            <View style={styles.table}>
-              <Row label="Employee NASSCORP (4%)" value={money(deductions.employeeNasscorp, currency)} />
-              <Row label="Income Tax (WHT)" value={money(deductions.incomeTax, currency)} />
-              <Row label="Loan Deductions" value={money(deductions.loanDeductions, currency)} />
-              <Row label="Other Deductions" value={money(deductions.otherDeductions, currency)} />
-              <Row label="Orange Money Fee" value={money(deductions.orangeMoneyFee, currency)} />
-              <Row label="Total Deductions" value={money(deductions.totalDeductions, currency)} last />
+          <View style={styles.tableSection}>
+            <View style={styles.earningsHalf}>
+              <View style={styles.headerRow}>
+                <Text style={styles.headerLabel}>EARNINGS</Text>
+                <Text style={styles.headerAmount}>AMOUNT ({data.currency})</Text>
+              </View>
+              {earningLines.map((line) => (
+                <LineItem key={line.label} label={line.label} value={line.value} />
+              ))}
+              <View style={{ height: spacerHeight }} />
+              <TotalLine label="Gross income" value={earnings.grossSalary} />
+              <View style={styles.netPayRow}>
+                <Text style={styles.netPayLabel}>End of month net pay - {data.currency}</Text>
+                <Text style={styles.netPayAmount}>{money(data.netSalary)}</Text>
+              </View>
             </View>
 
-            <Text style={styles.sectionTitle}>Employer Contribution</Text>
-            <View style={styles.table}>
-              <Row label="Employer NASSCORP (6%)" value={money(data.employerNasscorp, currency)} last />
+            <View style={styles.deductionsHalf}>
+              <View style={styles.headerRow}>
+                <Text style={styles.headerLabel}>DEDUCTIONS</Text>
+                <Text style={styles.headerAmount}>AMOUNT ({data.currency})</Text>
+              </View>
+              {deductionLines.map((line) => (
+                <LineItem key={line.label} label={line.label} value={line.value} />
+              ))}
+              <View style={{ height: spacerHeight }} />
+              <TotalLine label="Total deductions" value={deductions.totalDeductions} />
+              <View style={styles.nasscorpBox}>
+                <Text style={styles.nasscorpTitle}>NASSCORP CONTRIBUTION</Text>
+                <LineItem label={`${company.employeeNasscorpRate}% EMPLOYEE`} value={deductions.employeeNasscorp} />
+                <LineItem label={`${company.employerNasscorpRate}% EMPLOYER`} value={data.employerNasscorp} />
+                <LineItem label="TOTAL CONTRIBUTION" value={totalNasscorp} bold />
+              </View>
             </View>
           </View>
-        </View>
 
-        <View style={styles.netBox}>
-          <Text style={styles.netLabel}>Net Salary</Text>
-          <Text style={styles.netValue}>{money(data.netSalary, currency)}</Text>
+          <View style={styles.footerBar} />
         </View>
-
-        <Text style={styles.sectionTitle}>Bank Details</Text>
-        <View style={styles.table}>
-          <Row label="Payment Method" value={employee.paymentMethod.replace("_", " ")} />
-          {employee.paymentMethod === "orange_money" ? (
-            <Row label="Orange Money Number" value={employee.orangeMoneyNumber ?? "—"} last />
-          ) : (
-            <>
-              <Row label="Bank Name" value={employee.bankName ?? "—"} />
-              <Row label="Account Number" value={employee.bankAccountNumber ?? "—"} last />
-            </>
-          )}
-        </View>
-
-        <View style={styles.footerRow}>
-          <View style={styles.signatureLine}>
-            <Text>Authorized Signature — Human Resources</Text>
-          </View>
-          <View style={styles.qrBlock}>
-            {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer's Image has no alt prop; this isn't next/image */}
-            <Image src={qrDataUri} style={{ width: 56, height: 56 }} />
-            <Text style={styles.qrCaption}>Scan to verify this payslip</Text>
-          </View>
-        </View>
-
-        <Text style={styles.disclaimer}>
-          This is a computer-generated payslip and does not require a physical signature. Generated on {data.generatedAt}.
-          Confidential — for the named employee only.
-        </Text>
       </Page>
     </Document>
   );
 }
 
-function Row({ label, value, last }: { label: string; value: string; last?: boolean }) {
-  return (
-    <View style={last ? styles.tableRowLast : styles.tableRow}>
-      <Text style={styles.tableLabel}>{label}</Text>
-      <Text style={last ? [styles.tableValue, { color: COLORS.primary }] : styles.tableValue}>{value}</Text>
-    </View>
-  );
-}
-
 export async function renderPayslipPdf(data: PayslipPdfData): Promise<Buffer> {
-  const qrDataUri = await qrCodeDataUri(data.qrCodeData);
-  return renderToBuffer(<PayslipDocument data={data} qrDataUri={qrDataUri} />);
+  return renderToBuffer(<PayslipDocument data={data} />);
 }
