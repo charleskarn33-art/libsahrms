@@ -235,6 +235,29 @@ export interface LeaveRequest {
   created_at: string;
 }
 
+export interface LeaveTypeSettings {
+  id: string;
+  company_id: string;
+  leave_type: LeaveType;
+  default_days: number;
+  max_carry_forward_days: number;
+  is_paid: boolean;
+  is_active: boolean;
+}
+
+export interface LeavePolicy {
+  company_id: string;
+  leave_year_start_month: number;
+  probation_period_days: number;
+  min_service_months: number;
+  max_consecutive_leave_days: number;
+  approval_lead_days: number;
+  allow_half_day: boolean;
+  allow_backdated: boolean;
+  carry_forward_enabled: boolean;
+  encashment_enabled: boolean;
+}
+
 export type TaxRemittanceStatus = "pending" | "paid";
 
 export interface TaxRemittance {
