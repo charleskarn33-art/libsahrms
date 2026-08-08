@@ -7,7 +7,7 @@ A Human Resource & Payroll Management System for **LIBSA Consultancy**, built wi
 - **Frontend:** Next.js 15 (App Router), TypeScript, Tailwind CSS, Radix UI primitives, Lucide Icons, React Hook Form + Zod, TanStack Table, Recharts, Framer Motion-ready
 - **Backend:** Supabase (PostgreSQL, Auth, Row Level Security, Storage)
 - **Email:** Resend API — payslip delivery (Phase 4)
-- **PDF:** @react-pdf/renderer — branded payslips + QR verification (Phase 4)
+- **PDF:** @react-pdf/renderer — payslips (Phase 4) and tabular reports (Phase 5)
 - **Deployment:** Vercel + Supabase
 
 ## Getting started
@@ -116,7 +116,7 @@ LIBSA Consultancy provides HR/payroll as a service to multiple client companies,
 - Audit Logs, In-app Notifications, Employee Self-Service landing page
 
 **Phase 4 — Payslips & delivery**
-- `generatePayslips` (`src/actions/payslips.ts`): once a period is `locked`, renders one branded A4 PDF per employee with `@react-pdf/renderer` (`src/lib/payslip-pdf.tsx`) — company logo/watermark, employee + period info grid, Earnings/Deductions/Employer Contribution tables, a highlighted Net Salary box, bank/Orange Money details, and a verification QR code (`qrcode`) — uploads each to the `payslips` storage bucket, inserts a `payslips` row with a globally-unique `{COMPANY_SLUG}-{YYYYMM}-{employeeNumber}` payslip number, and queues a `payslip_deliveries` row (idempotent — re-running only fills gaps, never duplicates)
+- `generatePayslips` (`src/actions/payslips.ts`): once a period is `locked`, renders one A4 PDF per employee with `@react-pdf/renderer` (`src/lib/payslip-pdf.tsx`) — a plain black-and-white "End of Month Payslip" ledger layout matching a reference design: company logo/name, an employee + period info grid (ID, job title, date of hire, period, bank/Orange Money or NASSCORP/TIN details), a two-column Earnings/Deductions table with accounting-style single/double rules under the subtotals, a bold net-pay line, and a NASSCORP Contribution breakdown (employee/employer/total) — uploads each to the `payslips` storage bucket, inserts a `payslips` row with a globally-unique `{COMPANY_SLUG}-{YYYYMM}-{employeeNumber}` payslip number, and queues a `payslip_deliveries` row (idempotent — re-running only fills gaps, never duplicates)
 - `/payroll/payslips`: period picker, a generate-payslips empty state, and once generated, a table of every payslip with delivery-status badges, in-browser View/Download (`/api/payslips/[id]`, RLS-gated — the route does no manual role check because a row the caller can't `select` is invisible), per-row Send/Resend, and bulk Send All / Retry Failed / Mark Payments Processed actions — reusing the dashboard's Payslip Distribution donut
 - Email delivery via Resend (`src/lib/resend.ts`, `src/lib/email-templates.ts`): each employee is emailed only their own payslip PDF as an attachment; `payslip_deliveries.status` moves `queued → sent` or `queued → failed` with the error message stored for retry
 - `markPaymentsProcessed` closes the loop: once payslips are sent, payroll staff can mark the period `paid` (`approval_stage: payments_processed`), the final stage in the workflow

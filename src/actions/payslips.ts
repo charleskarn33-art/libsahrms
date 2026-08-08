@@ -39,6 +39,10 @@ type PayrollItemForPayslip = {
     bank_account_number: string | null;
     orange_money_number: string | null;
     payment_method: string;
+    employment_type: string;
+    date_hired: string;
+    nasscorp_number: string | null;
+    tin: string | null;
     departments: { name: string } | null;
     positions: { title: string } | null;
   } | null;
@@ -67,7 +71,7 @@ export async function generatePayslips(periodId: string): Promise<ActionResult<{
        gross_salary, employee_nasscorp, employer_nasscorp, income_tax, loan_deductions, other_deductions, orange_money_fee,
        total_deductions, net_salary, employee_id,
        employees(first_name, last_name, employee_number, email, bank_name, bank_account_number, orange_money_number, payment_method,
-         departments!department_id(name), positions(title))`
+         employment_type, date_hired, nasscorp_number, tin, departments!department_id(name), positions(title))`
     )
     .eq("payroll_period_id", periodId);
 
@@ -96,18 +100,26 @@ export async function generatePayslips(periodId: string): Promise<ActionResult<{
 
     const pdfData: PayslipPdfData = {
       payslipNumber,
-      company: { name: company.name, address: company.address, logoUrl: company.logo_url },
+      company: {
+        name: company.name,
+        logoUrl: company.logo_url,
+        employeeNasscorpRate: Number(company.employee_nasscorp_rate),
+        employerNasscorpRate: Number(company.employer_nasscorp_rate),
+      },
       employee: {
         fullName,
         employeeNumber: emp.employee_number,
-        department: emp.departments?.name ?? null,
-        position: emp.positions?.title ?? null,
+        employmentType: emp.employment_type,
+        jobTitle: emp.positions?.title ?? null,
+        dateHired: emp.date_hired,
         bankName: emp.bank_name,
         bankAccountNumber: emp.bank_account_number,
         orangeMoneyNumber: emp.orange_money_number,
         paymentMethod: emp.payment_method,
+        nasscorpNumber: emp.nasscorp_number,
+        tin: emp.tin,
       },
-      period: { label: period.period_label, paymentDate: period.payment_date ? formatDate(period.payment_date) : null },
+      period: { label: period.period_label },
       currency: company.currency,
       earnings: {
         basicSalary: Number(rawItem.basic_salary),
@@ -129,7 +141,6 @@ export async function generatePayslips(periodId: string): Promise<ActionResult<{
       },
       employerNasscorp: Number(rawItem.employer_nasscorp),
       netSalary: Number(rawItem.net_salary),
-      qrCodeData,
       generatedAt: formatDate(new Date().toISOString()),
     };
 
