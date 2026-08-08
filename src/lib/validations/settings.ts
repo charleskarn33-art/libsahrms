@@ -10,5 +10,6 @@ export const companySettingsSchema = z.object({
   employee_nasscorp_rate: z.coerce.number().min(0).max(100),
   employer_nasscorp_rate: z.coerce.number().min(0).max(100),
   currency: z.string().min(1),
+  logo_url: z.string().optional().or(z.literal("")),
 });
 export type CompanySettingsInput = z.infer<typeof companySettingsSchema>;

@@ -5,6 +5,7 @@ export function buildPayslipNumber(companySlug: string, periodStart: string, emp
   return `${companySlug.toUpperCase()}-${year}${month}-${employeeNumber}`.replace(/\s+/g, "-");
 }
 
-export function buildQrCodeData(payslipNumber: string, companyName: string) {
-  return `${companyName} | Payslip ${payslipNumber}`;
+export function buildVerificationUrl(payslipId: string) {
+  const base = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
+  return `${base}/verify/${payslipId}`;
 }

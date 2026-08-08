@@ -21,6 +21,7 @@ export async function updateCompanySettings(id: string, input: unknown): Promise
     email: parsed.data.email || null,
     tin: parsed.data.tin || null,
     nasscorp_employer_number: parsed.data.nasscorp_employer_number || null,
+    logo_url: parsed.data.logo_url || null,
   };
 
   const { error } = await supabase.from("companies").update(payload).eq("id", id);

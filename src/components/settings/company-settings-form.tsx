@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { companySettingsSchema, type CompanySettingsInput } from "@/lib/validations/settings";
 import { updateCompanySettings } from "@/actions/settings";
+import { CompanyLogoUpload } from "@/components/settings/company-logo-upload";
 
 export function CompanySettingsForm({ id, defaultValues }: { id: string; defaultValues: CompanySettingsInput }) {
   const router = useRouter();
@@ -20,6 +21,8 @@ export function CompanySettingsForm({ id, defaultValues }: { id: string; default
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<CompanySettingsInput>({ resolver: zodResolver(companySettingsSchema), defaultValues });
 
@@ -38,6 +41,12 @@ export function CompanySettingsForm({ id, defaultValues }: { id: string; default
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <CompanyLogoUpload
+        companyId={id}
+        value={watch("logo_url") || undefined}
+        onChange={(url) => setValue("logo_url", url, { shouldDirty: true })}
+      />
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label className="mb-1.5 block">Company Name</Label>
