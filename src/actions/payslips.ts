@@ -6,7 +6,7 @@ import { logAudit } from "@/lib/audit";
 import { buildPayslipNumber, buildQrCodeData } from "@/lib/payslip";
 import { renderPayslipPdf, type PayslipPdfData } from "@/lib/payslip-pdf";
 import { payslipEmailSubject, payslipEmailHtml } from "@/lib/email-templates";
-import { getResendClient, getResendFromAddress } from "@/lib/resend";
+import { sendMail, getConfiguredMailProvider } from "@/lib/mailer";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 export type ActionResult<T = undefined> = { success: true; data?: T } | { success: false; error: string };
@@ -221,9 +221,12 @@ export async function generatePayslips(periodId: string): Promise<ActionResult<{
 
 async function sendOneDelivery(deliveryId: string): Promise<ActionResult> {
   const supabase = await createClient();
-  const resend = getResendClient();
-  if (!resend) {
-    return { success: false, error: "Email delivery isn't configured yet — set RESEND_API_KEY to enable sending." };
+
+  if (!getConfiguredMailProvider()) {
+    return {
+      success: false,
+      error: "Email delivery isn't configured yet — set RESEND_API_KEY, or GMAIL_USER/GMAIL_APP_PASSWORD, to enable sending.",
+    };
   }
 
   const { data: delivery, error: deliveryError } = await supabase
@@ -262,56 +265,46 @@ async function sendOneDelivery(deliveryId: string): Promise<ActionResult> {
   const companyName = company?.name ?? "LIBSA Consultancy";
   const netSalary = formatCurrency(Number(payrollItem?.net_salary ?? 0), company?.currency ?? "LRD");
 
-  try {
-    const { data: sendResult, error: sendError } = await resend.emails.send({
-      from: getResendFromAddress(),
-      to: delivery.recipient_email,
-      subject: payslipEmailSubject(periodLabel),
-      html: payslipEmailHtml({
-        employeeName: emp ? `${emp.first_name} ${emp.last_name}` : "Employee",
-        periodLabel,
-        netSalary,
-        paymentDate: period?.payment_date ? formatDate(period.payment_date) : null,
-        companyName,
-      }),
-      attachments: [{ filename: `${payslipMeta.payslip_number}.pdf`, content: pdfBuffer }],
-    });
+  const result = await sendMail({
+    to: delivery.recipient_email,
+    subject: payslipEmailSubject(periodLabel),
+    html: payslipEmailHtml({
+      employeeName: emp ? `${emp.first_name} ${emp.last_name}` : "Employee",
+      periodLabel,
+      netSalary,
+      paymentDate: period?.payment_date ? formatDate(period.payment_date) : null,
+      companyName,
+    }),
+    attachments: [{ filename: `${payslipMeta.payslip_number}.pdf`, content: pdfBuffer }],
+  });
 
-    if (sendError) {
-      await supabase
-        .from("payslip_deliveries")
-        .update({ status: "failed", error_message: sendError.message, attempt_count: (delivery.attempt_count ?? 0) + 1 })
-        .eq("id", deliveryId);
-      return { success: false, error: sendError.message };
-    }
-
+  if (!result.success) {
     await supabase
       .from("payslip_deliveries")
-      .update({
-        status: "sent",
-        provider_message_id: sendResult?.id ?? null,
-        sent_at: new Date().toISOString(),
-        error_message: null,
-        attempt_count: (delivery.attempt_count ?? 0) + 1,
-      })
+      .update({ status: "failed", error_message: result.error, attempt_count: (delivery.attempt_count ?? 0) + 1 })
       .eq("id", deliveryId);
-
-    await logAudit({
-      action: "payslip_emailed",
-      entityType: "payslip_delivery",
-      entityId: deliveryId,
-      companyId: period?.company_id,
-    });
-
-    return { success: true };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to send email";
-    await supabase
-      .from("payslip_deliveries")
-      .update({ status: "failed", error_message: message, attempt_count: (delivery.attempt_count ?? 0) + 1 })
-      .eq("id", deliveryId);
-    return { success: false, error: message };
+    return { success: false, error: result.error };
   }
+
+  await supabase
+    .from("payslip_deliveries")
+    .update({
+      status: "sent",
+      provider_message_id: result.providerMessageId,
+      sent_at: new Date().toISOString(),
+      error_message: null,
+      attempt_count: (delivery.attempt_count ?? 0) + 1,
+    })
+    .eq("id", deliveryId);
+
+  await logAudit({
+    action: "payslip_emailed",
+    entityType: "payslip_delivery",
+    entityId: deliveryId,
+    companyId: period?.company_id,
+  });
+
+  return { success: true };
 }
 
 export async function sendPayslipDelivery(deliveryId: string): Promise<ActionResult> {
