@@ -121,11 +121,21 @@ LIBSA Consultancy provides HR/payroll as a service to multiple client companies,
 - **Honest gap:** `delivered`/`opened` are real states in the `PayslipDeliveryStatus` type and schema, but nothing populates them yet — that requires wiring a Resend webhook (delivery/open events) to update `payslip_deliveries`, which is not implemented. Only `queued`, `sent`, and `failed` are reachable today.
 - **Not yet verified against a live environment:** the PDF pipeline was smoke-tested locally (rendered and rasterized a real payslip PDF to confirm layout), and `generatePayslips`/`sendOneDelivery` type-check and build clean, but neither has been run against the live Supabase project or a real Resend account from this sandbox (network policy blocks both) — please test one full generate → send cycle on staging before relying on it for real payroll.
 
+**Phase 5 — Reports & analytics**
+- `/reports`: a hub linking to every report below.
+- **Payroll Summary** (`/reports/payroll`): every payroll period with gross/deductions/net/NASSCORP/tax, a salary cost trend chart, and YTD stat cards — sourced from `v_payroll_period_summary` joined to `payroll_periods` for date ordering.
+- **Department Cost** (`/reports/departments`): current establishment headcount + basic salary from `v_department_headcount`, plus actual payroll cost by department for a selected locked/paid period (aggregated from `payroll_items`).
+- **Tax & NASSCORP Remittance** (`/nasscorp`, enhanced in place): per-employee employee/employer NASSCORP and income tax for a selected period, with a totals row, CSV export, and a printable PDF (`/api/reports/nasscorp/[periodId]`).
+- **Bank & Orange Money Transfers** (`/reports/payments`): per-employee net pay with bank/Orange Money details for a selected period — the document finance actually hands to the bank — with CSV and PDF export (`/api/reports/payments/[periodId]`).
+- **Attendance** (`/reports/attendance`): present/late/absent/on-leave counts and overtime hours per employee over a date range (native `<input type="date">` GET form, no client JS needed for the range picker).
+- **Leave** (`/reports/leave`): approved leave days broken down by type and by department, plus the full request detail, over a date range.
+- **Loans & Advances** (`/reports/loans`): every loan/advance with principal, monthly deduction, balance remaining, and status, plus outstanding-balance stat cards.
+- `src/lib/report-pdf.tsx`: a reusable generic tabular PDF renderer (`@react-pdf/renderer`, landscape A4, header/body/optional bold totals row) shared by the NASSCORP and payments PDF routes — the payslip PDF (Phase 4) has its own richer layout and stays separate.
+- **Scope note:** export is CSV (opens fine in Excel) plus PDF for the two documents that are genuinely handed to a bank or a statutory authority (remittance, transfers). A dedicated Excel (`.xlsx`) exporter was deliberately left out — it would mean a new heavy dependency for a format CSV already covers with no loss of data.
+- The report PDF pipeline was smoke-tested the same way as the Phase 4 payslip PDF (rendered and rasterized to confirm layout), since `@react-pdf/renderer` runtime issues aren't caught by type-checking.
+
 ## Roadmap — not yet built
 
-These are scoped and the schema already supports them (see the in-app "coming in Phase N" panels on `/reports`, `/nasscorp`):
-
-- **Phase 5 — Reports & analytics:** payroll summary, department cost, tax/NASSCORP remittance, attendance, leave, loan, and bank/Orange Money transfer reports; PDF/Excel/CSV export; richer dashboard analytics
 - **Phase 6 — Hardening:** automated tests, rate limiting on auth routes, CSV/Excel bulk employee import, birthday/contract-expiry notification cron (Supabase Edge Function + `pg_cron`), AI payroll assistant, Resend delivery/open webhooks, and a documented deployment runbook for Vercel + Supabase
 
 ## Project structure

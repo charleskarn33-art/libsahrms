@@ -92,6 +92,16 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/reports",
     icon: BarChart3,
     roles: ["super_admin", "hr_manager", "finance_manager", "managing_director", "auditor"],
+    children: [
+      { label: "Reports Home", href: "/reports" },
+      { label: "Payroll Summary", href: "/reports/payroll" },
+      { label: "Department Cost", href: "/reports/departments" },
+      { label: "Tax & NASSCORP", href: "/nasscorp" },
+      { label: "Bank & Orange Money", href: "/reports/payments" },
+      { label: "Attendance", href: "/reports/attendance" },
+      { label: "Leave", href: "/reports/leave" },
+      { label: "Loans & Advances", href: "/reports/loans" },
+    ],
   },
   {
     label: "Approvals",
