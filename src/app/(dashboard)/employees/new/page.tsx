@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentCompanyId } from "@/lib/company";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmployeeForm } from "@/components/employees/employee-form";
+import { ImportEmployeesDialog } from "@/components/employees/import-employees-dialog";
 
 export default async function NewEmployeePage() {
   const supabase = await createClient();
@@ -15,9 +16,12 @@ export default async function NewEmployeePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Add Employee</h1>
-        <p className="text-sm text-muted-foreground">Create a new employee record.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Add Employee</h1>
+          <p className="text-sm text-muted-foreground">Create a new employee record, or import several at once from a CSV file.</p>
+        </div>
+        <ImportEmployeesDialog redirectTo="/employees" />
       </div>
 
       <Card>

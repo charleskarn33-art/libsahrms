@@ -23,6 +23,12 @@ export default async function LeavePage() {
   const { data: employee } = await supabase.from("employees").select("id").eq("profile_id", user?.id ?? "").maybeSingle();
 
   const companyId = await getCurrentCompanyId();
+
+  const { data: allEmployees } = isHr
+    ? await supabase.from("employees").select("id, first_name, last_name").eq("company_id", companyId ?? "").order("first_name")
+    : { data: null };
+  const employeeOptions = (allEmployees ?? []).map((e) => ({ id: e.id, label: `${e.first_name} ${e.last_name}` }));
+
   const query = supabase
     .from("leave_requests")
     .select(
@@ -82,7 +88,7 @@ export default async function LeavePage() {
     : { data: [] };
 
   return (
-    <LeaveRequestDialogProvider>
+    <LeaveRequestDialogProvider employeeOptions={isHr ? employeeOptions : undefined}>
       <div className="space-y-6">
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <span>Leave Management</span>
@@ -95,7 +101,7 @@ export default async function LeavePage() {
             <h1 className="text-2xl font-bold tracking-tight">Leave Management</h1>
             <p className="text-sm text-muted-foreground">Manage and track employee leave requests.</p>
           </div>
-          <NewLeaveRequestButton />
+          <NewLeaveRequestButton isHrMode={isHr} />
         </div>
 
         <LeaveStatCards
