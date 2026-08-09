@@ -119,6 +119,31 @@ function numberOrDefault(value: string, fallback: number) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+const EMPLOYMENT_TYPE_VALUES = ["full_time", "part_time", "contract", "intern", "temporary"];
+const EMPLOYMENT_STATUS_VALUES = ["active", "probation", "on_leave", "suspended", "terminated", "resigned", "retired"];
+
+/**
+ * "Employment Type" (full-time/part-time/…) and "Employment Status"
+ * (active/on leave/…) are easy to mix up in a spreadsheet since both sound
+ * like the same idea. If a cell holds a value that's valid for the *other*
+ * column, move it there instead of failing the row.
+ */
+function resolveEmploymentFields(row: Record<string, string>) {
+  let type = normalizeEnumCell(row, "Employment Type");
+  let status = normalizeEnumCell(row, "Employment Status");
+
+  if (status && !EMPLOYMENT_STATUS_VALUES.includes(status) && EMPLOYMENT_TYPE_VALUES.includes(status)) {
+    if (!type) type = status;
+    status = "";
+  }
+  if (type && !EMPLOYMENT_TYPE_VALUES.includes(type) && EMPLOYMENT_STATUS_VALUES.includes(type)) {
+    if (!status) status = type;
+    type = "";
+  }
+
+  return { employment_type: type || "full_time", employment_status: status || "active" };
+}
+
 /**
  * Bulk-creates employees from parsed CSV rows keyed by column header — the
  * full field set the Add Employee form supports (see TEMPLATE_HEADERS in
@@ -156,6 +181,7 @@ export async function bulkImportEmployees(rows: Record<string, string>[]): Promi
     const positionId = positions?.find((p) => p.title.toLowerCase() === cell(row, "Position").toLowerCase())?.id ?? "";
     const supervisorId =
       existingEmployees?.find((e) => e.employee_number.toLowerCase() === cell(row, "Supervisor Employee Number").toLowerCase())?.id ?? "";
+    const { employment_type: employmentType, employment_status: employmentStatus } = resolveEmploymentFields(row);
 
     const candidate = {
       employee_number: employeeNumber,
@@ -181,8 +207,8 @@ export async function bulkImportEmployees(rows: Record<string, string>[]): Promi
       position_id: positionId,
       supervisor_id: supervisorId,
 
-      employment_type: normalizeEnumCell(row, "Employment Type") || "full_time",
-      employment_status: normalizeEnumCell(row, "Employment Status") || "active",
+      employment_type: employmentType,
+      employment_status: employmentStatus,
       date_hired: cell(row, "Date Hired") || new Date().toISOString().slice(0, 10),
 
       salary_grade: cell(row, "Salary Grade"),
@@ -207,7 +233,9 @@ export async function bulkImportEmployees(rows: Record<string, string>[]): Promi
 
     const parsed = employeeSchema.safeParse(candidate);
     if (!parsed.success) {
-      results.push({ row: i + 2, employeeNumber, status: "skipped", reason: parsed.error.issues[0]?.message ?? "Invalid data" });
+      const issue = parsed.error.issues[0];
+      const reason = issue ? `${issue.path.join(".")}: ${issue.message}` : "Invalid data";
+      results.push({ row: i + 2, employeeNumber, status: "skipped", reason });
       continue;
     }
 
