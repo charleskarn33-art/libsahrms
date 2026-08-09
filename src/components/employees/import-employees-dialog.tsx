@@ -33,7 +33,7 @@ function rowsFromCsv(text: string): Record<string, string>[] {
   });
 }
 
-export function ImportEmployeesDialog() {
+export function ImportEmployeesDialog({ redirectTo }: { redirectTo?: string } = {}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -71,6 +71,10 @@ export function ImportEmployeesDialog() {
   function handleClose(next: boolean) {
     setOpen(next);
     if (!next) {
+      const createdCount = results?.filter((r) => r.status === "created").length ?? 0;
+      if (redirectTo && createdCount > 0) {
+        router.push(redirectTo);
+      }
       setResults(null);
       if (inputRef.current) inputRef.current.value = "";
     }
