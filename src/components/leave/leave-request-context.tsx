@@ -13,22 +13,29 @@ export function useOpenLeaveRequestDialog() {
   return open;
 }
 
-export function LeaveRequestDialogProvider({ children }: { children: ReactNode }) {
+export function LeaveRequestDialogProvider({
+  children,
+  employeeOptions,
+}: {
+  children: ReactNode;
+  /** Pass the company's employee list to let HR/Admin set leave on behalf of anyone. Omit for self-service only. */
+  employeeOptions?: { id: string; label: string }[];
+}) {
   const [open, setOpen] = useState(false);
 
   return (
     <LeaveRequestDialogContext.Provider value={() => setOpen(true)}>
       {children}
-      <LeaveRequestDialog open={open} onOpenChange={setOpen} hideTrigger />
+      <LeaveRequestDialog open={open} onOpenChange={setOpen} hideTrigger employeeOptions={employeeOptions} />
     </LeaveRequestDialogContext.Provider>
   );
 }
 
-export function NewLeaveRequestButton() {
+export function NewLeaveRequestButton({ isHrMode = false }: { isHrMode?: boolean }) {
   const openDialog = useOpenLeaveRequestDialog();
   return (
     <Button variant="gradient" onClick={openDialog}>
-      <Plus className="h-4 w-4" /> New Leave Request
+      <Plus className="h-4 w-4" /> {isHrMode ? "Set Leave for Employee" : "New Leave Request"}
     </Button>
   );
 }

@@ -21,14 +21,18 @@ export function LeaveRequestDialog({
   open: controlledOpen,
   onOpenChange,
   hideTrigger = false,
+  employeeOptions,
 }: {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   hideTrigger?: boolean;
+  /** When provided (HR/Admin), the dialog lets the caller pick any employee and records the leave as already approved. */
+  employeeOptions?: { id: string; label: string }[];
 } = {}) {
   const router = useRouter();
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const isHrMode = !!employeeOptions?.length;
 
   const open = controlledOpen ?? uncontrolledOpen;
   const setOpen = onOpenChange ?? setUncontrolledOpen;
@@ -42,6 +46,11 @@ export function LeaveRequestDialog({
   } = useForm<LeaveRequestInput>({ resolver: zodResolver(leaveRequestSchema) });
 
   async function onSubmit(values: LeaveRequestInput) {
+    if (isHrMode && !values.employee_id) {
+      toast.error("Select an employee");
+      return;
+    }
+
     setSubmitting(true);
     const result = await requestLeave(values);
     setSubmitting(false);
@@ -51,7 +60,7 @@ export function LeaveRequestDialog({
       return;
     }
 
-    toast.success("Leave request submitted");
+    toast.success(isHrMode ? "Leave recorded" : "Leave request submitted");
     reset();
     setOpen(false);
     router.refresh();
@@ -62,15 +71,38 @@ export function LeaveRequestDialog({
       {!hideTrigger && (
         <DialogTrigger asChild>
           <Button variant="gradient">
-            <Plus className="h-4 w-4" /> New Leave Request
+            <Plus className="h-4 w-4" /> {isHrMode ? "Set Leave for Employee" : "New Leave Request"}
           </Button>
         </DialogTrigger>
       )}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>New Leave Request</DialogTitle>
+          <DialogTitle>{isHrMode ? "Set Leave for Employee" : "New Leave Request"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {isHrMode && (
+            <div>
+              <Label className="mb-1.5 block">Employee</Label>
+              <Controller
+                control={control}
+                name="employee_id"
+                render={({ field }) => (
+                  <Select value={field.value || undefined} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select employee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employeeOptions!.map((e) => (
+                        <SelectItem key={e.id} value={e.id}>
+                          {e.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+          )}
           <div>
             <Label className="mb-1.5 block">Leave Type</Label>
             <Controller
@@ -109,10 +141,15 @@ export function LeaveRequestDialog({
             <Label className="mb-1.5 block">Reason</Label>
             <Input {...register("reason")} placeholder="Optional" />
           </div>
+          {isHrMode && (
+            <p className="text-xs text-muted-foreground">
+              This records the leave as already approved and deducts it from the employee&apos;s balance immediately.
+            </p>
+          )}
           <DialogFooter>
             <Button type="submit" variant="gradient" disabled={submitting}>
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Submit Request
+              {isHrMode ? "Save Leave Record" : "Submit Request"}
             </Button>
           </DialogFooter>
         </form>
