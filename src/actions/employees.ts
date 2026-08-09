@@ -30,7 +30,7 @@ export async function createEmployee(input: unknown): Promise<ActionResult<{ id:
   if (!companyId) return { success: false, error: "No company selected" };
 
   const supabase = await createClient();
-  const payload = cleanUuidFields(parsed.data, ["department_id", "position_id", "supervisor_id", "photo_url"]);
+  const payload = cleanUuidFields(parsed.data, ["department_id", "position_id", "supervisor_id", "photo_url", "date_of_birth"]);
 
   const { data, error } = await supabase
     .from("employees")
@@ -55,7 +55,7 @@ export async function updateEmployee(id: string, input: unknown): Promise<Action
 
   const companyId = await getCurrentCompanyId();
   const supabase = await createClient();
-  const payload = cleanUuidFields(parsed.data, ["department_id", "position_id", "supervisor_id", "photo_url"]);
+  const payload = cleanUuidFields(parsed.data, ["department_id", "position_id", "supervisor_id", "photo_url", "date_of_birth"]);
 
   const { error } = await supabase.from("employees").update(payload).eq("id", id);
 
@@ -145,6 +145,37 @@ function resolveEmploymentFields(row: Record<string, string>) {
 }
 
 /**
+ * Accepts ISO (YYYY-MM-DD) or day-first slash/dash dates (DD/MM/YYYY,
+ * DD-MM-YYYY) — day-first because that's the format this app's users
+ * write in, and Postgres's `date` column rejects "" outright, so a blank
+ * cell must become null rather than passing an empty string through.
+ * Returns an error for anything else so a typo is reported clearly
+ * instead of failing as a raw database error.
+ */
+function parseDateCell(value: string): { value: string | null; error?: string } {
+  if (!value) return { value: null };
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const d = new Date(value);
+    if (!Number.isNaN(d.getTime())) return { value };
+  }
+
+  const m = value.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (m) {
+    const day = Number(m[1]);
+    const month = Number(m[2]);
+    const year = Number(m[3]);
+    const iso = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const d = new Date(iso);
+    if (d.getUTCFullYear() === year && d.getUTCMonth() + 1 === month && d.getUTCDate() === day) {
+      return { value: iso };
+    }
+  }
+
+  return { value: null, error: `"${value}" isn't a recognized date — use YYYY-MM-DD or DD/MM/YYYY` };
+}
+
+/**
  * Bulk-creates employees from parsed CSV rows keyed by column header — the
  * full field set the Add Employee form supports (see TEMPLATE_HEADERS in
  * import-employees-dialog.tsx), not just the identity/payroll basics.
@@ -183,6 +214,18 @@ export async function bulkImportEmployees(rows: Record<string, string>[]): Promi
       existingEmployees?.find((e) => e.employee_number.toLowerCase() === cell(row, "Supervisor Employee Number").toLowerCase())?.id ?? "";
     const { employment_type: employmentType, employment_status: employmentStatus } = resolveEmploymentFields(row);
 
+    const dateOfBirth = parseDateCell(cell(row, "Date of Birth"));
+    if (dateOfBirth.error) {
+      results.push({ row: i + 2, employeeNumber, status: "skipped", reason: `Date of Birth: ${dateOfBirth.error}` });
+      continue;
+    }
+    const dateHiredCell = cell(row, "Date Hired");
+    const dateHired = dateHiredCell ? parseDateCell(dateHiredCell) : { value: new Date().toISOString().slice(0, 10) };
+    if (dateHired.error) {
+      results.push({ row: i + 2, employeeNumber, status: "skipped", reason: `Date Hired: ${dateHired.error}` });
+      continue;
+    }
+
     const candidate = {
       employee_number: employeeNumber,
       first_name: cell(row, "First Name"),
@@ -190,7 +233,7 @@ export async function bulkImportEmployees(rows: Record<string, string>[]): Promi
       last_name: cell(row, "Last Name"),
 
       gender: normalizeEnumCell(row, "Gender") || undefined,
-      date_of_birth: cell(row, "Date of Birth"),
+      date_of_birth: dateOfBirth.value ?? "",
       marital_status: normalizeEnumCell(row, "Marital Status") || undefined,
       nationality: cell(row, "Nationality"),
       county: cell(row, "County"),
@@ -209,7 +252,7 @@ export async function bulkImportEmployees(rows: Record<string, string>[]): Promi
 
       employment_type: employmentType,
       employment_status: employmentStatus,
-      date_hired: cell(row, "Date Hired") || new Date().toISOString().slice(0, 10),
+      date_hired: dateHired.value!,
 
       salary_grade: cell(row, "Salary Grade"),
       basic_salary: numberOrDefault(cell(row, "Basic Salary"), 0),
@@ -239,7 +282,7 @@ export async function bulkImportEmployees(rows: Record<string, string>[]): Promi
       continue;
     }
 
-    const payload = cleanUuidFields(parsed.data, ["department_id", "position_id", "supervisor_id", "photo_url"]);
+    const payload = cleanUuidFields(parsed.data, ["department_id", "position_id", "supervisor_id", "photo_url", "date_of_birth"]);
     const { error } = await supabase.from("employees").insert({ ...payload, company_id: companyId });
 
     results.push(

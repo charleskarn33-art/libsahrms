@@ -128,7 +128,8 @@ export function ImportEmployeesDialog({ redirectTo }: { redirectTo?: string } = 
               Upload a CSV with a header row covering the same details as the Add Employee form — only Employee
               Number, First Name, and Last Name are required, everything else can be left blank. Department,
               Position, and Supervisor (matched by their Employee Number) are matched by name against your existing
-              records; unmatched names are left blank rather than failing the row.
+              records; unmatched names are left blank rather than failing the row. Dates should be YYYY-MM-DD or
+              DD/MM/YYYY.
             </p>
             <Button type="button" variant="ghost" size="sm" onClick={handleDownloadTemplate} className="text-primary">
               <FileDown className="h-4 w-4" /> Download CSV template
