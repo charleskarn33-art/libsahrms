@@ -14,12 +14,39 @@ const TEMPLATE_HEADERS = [
   "First Name",
   "Middle Name",
   "Last Name",
-  "Email",
+  "Gender",
+  "Date of Birth",
+  "Marital Status",
+  "Nationality",
+  "County",
+  "District",
+  "Address",
   "Phone",
+  "Email",
+  "Emergency Contact Name",
+  "Emergency Contact Phone",
+  "Emergency Contact Relationship",
   "Department",
   "Position",
+  "Supervisor Employee Number",
+  "Employment Type",
+  "Employment Status",
   "Date Hired",
+  "Salary Grade",
   "Basic Salary",
+  "Transport Allowance",
+  "Housing Allowance",
+  "Relocation Allowance",
+  "Standard Bonus",
+  "Standard Commission",
+  "Bank Name",
+  "Bank Account Number",
+  "Orange Money Number",
+  "Payment Method",
+  "TIN",
+  "NASSCORP Number",
+  "Tax Status",
+  "Medical Information",
 ];
 
 function rowsFromCsv(text: string): Record<string, string>[] {
@@ -98,8 +125,10 @@ export function ImportEmployeesDialog({ redirectTo }: { redirectTo?: string } = 
         {!results ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Upload a CSV with a header row. Department and Position are matched by name against your existing
-              records — unmatched names are left blank rather than failing the row.
+              Upload a CSV with a header row covering the same details as the Add Employee form — only Employee
+              Number, First Name, and Last Name are required, everything else can be left blank. Department,
+              Position, and Supervisor (matched by their Employee Number) are matched by name against your existing
+              records; unmatched names are left blank rather than failing the row.
             </p>
             <Button type="button" variant="ghost" size="sm" onClick={handleDownloadTemplate} className="text-primary">
               <FileDown className="h-4 w-4" /> Download CSV template
