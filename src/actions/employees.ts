@@ -104,57 +104,115 @@ export interface ImportRowResult {
   reason?: string;
 }
 
+function cell(row: Record<string, string>, header: string) {
+  return row[header]?.trim() || "";
+}
+
+/** Matches CSV enum text loosely — "Full Time" / "full-time" / "full_time" all resolve the same way. */
+function normalizeEnumCell(row: Record<string, string>, header: string) {
+  return cell(row, header).toLowerCase().replace(/[\s-]+/g, "_");
+}
+
+function numberOrDefault(value: string, fallback: number) {
+  if (!value) return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 /**
- * Bulk-creates employees from parsed CSV rows keyed by column header
- * (Employee Number, First Name, Middle Name, Last Name, Email, Phone,
- * Department, Position, Date Hired, Basic Salary). Unknown Department /
- * Position names are left unset rather than failing the row — HR can
- * fix those up afterward from the employee list.
+ * Bulk-creates employees from parsed CSV rows keyed by column header — the
+ * full field set the Add Employee form supports (see TEMPLATE_HEADERS in
+ * import-employees-dialog.tsx), not just the identity/payroll basics.
+ * Department / Position / Supervisor are matched by name (or, for
+ * supervisor, Employee Number) against existing company records; unmatched
+ * names are left unset rather than failing the row. Each row is validated
+ * with the same employeeSchema the single-employee form uses, so a bad enum
+ * value (e.g. a typo'd Employment Type) is reported clearly instead of
+ * failing as a raw database error.
  */
 export async function bulkImportEmployees(rows: Record<string, string>[]): Promise<ActionResult<{ results: ImportRowResult[] }>> {
   const companyId = await getCurrentCompanyId();
   if (!companyId) return { success: false, error: "No company selected" };
 
   const supabase = await createClient();
-  const [{ data: departments }, { data: positions }] = await Promise.all([
+  const [{ data: departments }, { data: positions }, { data: existingEmployees }] = await Promise.all([
     supabase.from("departments").select("id, name").eq("company_id", companyId),
     supabase.from("positions").select("id, title").eq("company_id", companyId),
+    supabase.from("employees").select("id, employee_number").eq("company_id", companyId),
   ]);
 
   const results: ImportRowResult[] = [];
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const employeeNumber = row["Employee Number"]?.trim();
-    const firstName = row["First Name"]?.trim();
-    const lastName = row["Last Name"]?.trim();
+    const employeeNumber = cell(row, "Employee Number");
 
-    if (!employeeNumber || !firstName || !lastName) {
+    if (!employeeNumber || !cell(row, "First Name") || !cell(row, "Last Name")) {
       results.push({ row: i + 2, employeeNumber: employeeNumber || "—", status: "skipped", reason: "Missing Employee Number, First Name, or Last Name" });
       continue;
     }
 
-    const departmentId = departments?.find((d) => d.name.toLowerCase() === row["Department"]?.trim().toLowerCase())?.id ?? null;
-    const positionId = positions?.find((p) => p.title.toLowerCase() === row["Position"]?.trim().toLowerCase())?.id ?? null;
-    const basicSalary = Number(row["Basic Salary"]);
+    const departmentId = departments?.find((d) => d.name.toLowerCase() === cell(row, "Department").toLowerCase())?.id ?? "";
+    const positionId = positions?.find((p) => p.title.toLowerCase() === cell(row, "Position").toLowerCase())?.id ?? "";
+    const supervisorId =
+      existingEmployees?.find((e) => e.employee_number.toLowerCase() === cell(row, "Supervisor Employee Number").toLowerCase())?.id ?? "";
 
-    const { error } = await supabase.from("employees").insert({
-      company_id: companyId,
+    const candidate = {
       employee_number: employeeNumber,
-      first_name: firstName,
-      middle_name: row["Middle Name"]?.trim() || null,
-      last_name: lastName,
-      email: row["Email"]?.trim() || null,
-      phone: row["Phone"]?.trim() || null,
+      first_name: cell(row, "First Name"),
+      middle_name: cell(row, "Middle Name"),
+      last_name: cell(row, "Last Name"),
+
+      gender: normalizeEnumCell(row, "Gender") || undefined,
+      date_of_birth: cell(row, "Date of Birth"),
+      marital_status: normalizeEnumCell(row, "Marital Status") || undefined,
+      nationality: cell(row, "Nationality"),
+      county: cell(row, "County"),
+      district: cell(row, "District"),
+      address: cell(row, "Address"),
+
+      phone: cell(row, "Phone"),
+      email: cell(row, "Email"),
+      emergency_contact_name: cell(row, "Emergency Contact Name"),
+      emergency_contact_phone: cell(row, "Emergency Contact Phone"),
+      emergency_contact_relationship: cell(row, "Emergency Contact Relationship"),
+
       department_id: departmentId,
       position_id: positionId,
-      date_hired: row["Date Hired"]?.trim() || new Date().toISOString().slice(0, 10),
-      basic_salary: Number.isFinite(basicSalary) ? basicSalary : 0,
-      employment_type: "full_time",
-      employment_status: "active",
-      payment_method: "bank",
-      tax_status: "single",
-    });
+      supervisor_id: supervisorId,
+
+      employment_type: normalizeEnumCell(row, "Employment Type") || "full_time",
+      employment_status: normalizeEnumCell(row, "Employment Status") || "active",
+      date_hired: cell(row, "Date Hired") || new Date().toISOString().slice(0, 10),
+
+      salary_grade: cell(row, "Salary Grade"),
+      basic_salary: numberOrDefault(cell(row, "Basic Salary"), 0),
+      transport_allowance: numberOrDefault(cell(row, "Transport Allowance"), 0),
+      housing_allowance: numberOrDefault(cell(row, "Housing Allowance"), 0),
+      relocation_allowance: numberOrDefault(cell(row, "Relocation Allowance"), 0),
+      standard_bonus: numberOrDefault(cell(row, "Standard Bonus"), 0),
+      standard_commission: numberOrDefault(cell(row, "Standard Commission"), 0),
+
+      bank_name: cell(row, "Bank Name"),
+      bank_account_number: cell(row, "Bank Account Number"),
+      orange_money_number: cell(row, "Orange Money Number"),
+      payment_method: normalizeEnumCell(row, "Payment Method") || "bank",
+
+      tin: cell(row, "TIN"),
+      nasscorp_number: cell(row, "NASSCORP Number"),
+      tax_status: normalizeEnumCell(row, "Tax Status") || "single",
+
+      medical_information: cell(row, "Medical Information"),
+    };
+
+    const parsed = employeeSchema.safeParse(candidate);
+    if (!parsed.success) {
+      results.push({ row: i + 2, employeeNumber, status: "skipped", reason: parsed.error.issues[0]?.message ?? "Invalid data" });
+      continue;
+    }
+
+    const payload = cleanUuidFields(parsed.data, ["department_id", "position_id", "supervisor_id", "photo_url"]);
+    const { error } = await supabase.from("employees").insert({ ...payload, company_id: companyId });
 
     results.push(
       error
